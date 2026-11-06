@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pierhop"
+dynamic = ["version"]
+description = "Move files and text between your computer and your phone over Wi-Fi. No app on the phone, no account, no paywall."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Olutobi Ogunsola" }]
+requires-python = ">=3.9"
+keywords = ["android", "file-transfer", "wifi", "lan", "share", "macos"]
+classifiers = [
+  "Environment :: Web Environment",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: Communications :: File Sharing",
+]
+
+[project.urls]
+Homepage = "https://github.com/OlutobiOgunsola/pierhop"
+Issues = "https://github.com/OlutobiOgunsola/pierhop/issues"
+
+[project.optional-dependencies]
+qr = ["qrcode"]
+
+[project.scripts]
+pierhop = "pierhop.cli:main"
+
+[tool.setuptools]
+packages = ["pierhop"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pierhop.__version__" }
+
+[tool.setuptools.package-data]
+pierhop = ["static/*"]

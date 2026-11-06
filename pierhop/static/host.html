@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="pierhop-key" content="__HOST_KEY__">
+<title>PierHop</title>
+<style>
+:root {
+  --bg: #f4f4f5; --card: #fff; --text: #18181b; --muted: #71717a; --line: #e4e4e7;
+  --accent: #2563eb; --accent-text: #fff; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
+  --soft: #f4f4f5; --notice: #eff6ff; --notice-line: #bfdbfe;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #09090b; --card: #18181b; --text: #f4f4f5; --muted: #a1a1aa; --line: #27272a;
+    --accent: #3b82f6; --soft: #27272a; --notice: #172554; --notice-line: #1e3a8a;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.45 system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+h1 small { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 6px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+main { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 0 24px 24px; max-width: 1200px; margin: 0 auto; }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; padding: 0 16px 16px; } header { padding: 16px; } }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+.pill { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--muted); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.pill.on { color: var(--ok); } .pill.on::before { background: var(--ok); }
+#qr { background: #fff; border-radius: 10px; padding: 8px; width: 100%; max-width: 240px; margin: 0 auto 12px; display: block; aspect-ratio: 1; }
+#qr svg { width: 100%; height: 100%; display: block; }
+.url { font: 13px ui-monospace, Menlo, monospace; background: var(--soft); padding: 8px 10px; border-radius: 8px; word-break: break-all; }
+.pinrow { display: flex; align-items: baseline; justify-content: space-between; margin-top: 14px; }
+.pin { font: 600 28px ui-monospace, Menlo, monospace; letter-spacing: .15em; }
+.access-note { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--soft); }
+button, .btn { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text); padding: 7px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+button.link, a.link { border: none; background: none; padding: 2px 4px; color: var(--accent); text-decoration: none; font: inherit; cursor: pointer; }
+button.danger { color: var(--bad); }
+button.icon { border: none; background: none; color: var(--muted); padding: 2px 6px; font-size: 16px; line-height: 1; }
+button.icon:hover { color: var(--bad); }
+button:disabled { opacity: .5; cursor: default; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; min-width: 0; }
+input[type=text], textarea, select { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+input[type=text], textarea { width: 100%; }
+textarea { resize: vertical; min-height: 64px; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; color: var(--muted); }
+.settings { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+.field-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.prefix { font: 13px ui-monospace, Menlo, monospace; color: var(--muted); }
+label.check, label.radio { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+label.radio { padding: 4px 0; }
+label.radio small { display: block; color: var(--muted); }
+.err { color: var(--bad); font-size: 13px; }
+.err:empty { display: none; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+#drop { border: 2px dashed var(--line); border-radius: 12px; padding: 22px; text-align: center; color: var(--muted); margin-top: 12px; transition: .15s; }
+#drop.over { border-color: var(--accent); color: var(--accent); background: var(--soft); }
+ul.list { list-style: none; margin: 12px 0 0; padding: 0; }
+ul.list > li { padding: 9px 0; border-top: 1px solid var(--line); }
+ul.list > li:first-child { border-top: none; }
+.line { display: flex; align-items: center; gap: 10px; }
+.name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty { color: var(--muted); padding: 6px 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex: none; }
+.dot.on { background: var(--ok); }
+input[type=text].dev-name { border: 1px solid transparent; background: none; padding: 3px 6px; margin-left: -6px; border-radius: 6px; width: auto; flex: 1; min-width: 0; font-weight: 500; }
+input[type=text].dev-name:hover { border-color: var(--line); }
+.targets { margin: 8px 0 2px; padding: 10px 12px; background: var(--soft); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.targets label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.vis { font-size: 12px; }
+.requests { display: flex; flex-direction: column; gap: 10px; }
+.request { background: var(--notice); border: 1px solid var(--notice-line); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.request .grow { min-width: 160px; }
+.bar { height: 6px; background: var(--soft); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.bar > div { height: 100%; background: var(--accent); transition: width .3s; }
+.t { padding: 10px 0; border-top: 1px solid var(--line); }
+.t:first-child { border-top: none; }
+.t .meta { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.t.done .bar > div { background: var(--ok); }
+.t.stopped .bar > div { background: var(--warn); }
+.text-item { padding: 10px 0; border-top: 1px solid var(--line); }
+.text-item:first-child { border-top: none; }
+.text-body { white-space: pre-wrap; word-break: break-word; margin: 4px 0; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PierHop <small id="instance-name"></small></h1>
+  <span id="status" class="pill">No devices connected</span>
+</header>
+<main>
+  <div class="col">
+    <section class="card">
+      <h2>Connect a device</h2>
+      <div id="qr" aria-label="QR code for the device link"></div>
+      <div class="row">
+        <div id="url" class="url grow"></div>
+        <button id="copy-url">Copy</button>
+      </div>
+      <div class="pinrow" id="pin-wrap">
+        <span class="muted">PIN</span>
+        <span id="pin" class="pin"></span>
+      </div>
+      <div class="access-note small" id="access-note" hidden></div>
+      <p class="muted small">Scan with a phone's camera, or open the link in any browser on the same Wi-Fi: phones, tablets and other computers all work.</p>
+      <details>
+        <summary>Settings</summary>
+        <div class="settings">
+          <div>
+            <div class="field-label">Name shown on devices</div>
+            <div class="row">
+              <input type="text" id="name" class="grow" spellcheck="false" autocomplete="off" maxlength="40">
+              <button id="save-name">Save</button>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">Link</div>
+            <div class="row">
+              <span class="prefix" id="prefix"></span>
+              <input type="text" id="link" class="grow" placeholder="music" spellcheck="false" autocomplete="off" maxlength="40">
+            </div>
+            <div class="row" style="margin-top:8px">
+              <button id="save-link">Save link</button>
+              <button id="random-link">Use a random link</button>
+            </div>
+          </div>
+          <div class="err" id="settings-err"></div>
+          <div>
+            <div class="field-label">Who can connect</div>
+            <label class="radio"><input type="radio" name="access" value="pin"><span>Devices that enter the PIN<small>Recommended.</small></span></label>
+            <label class="radio"><input type="radio" name="access" value="approve"><span>Devices I approve<small>You get an Allow / Deny prompt here for each new device.</small></span></label>
+            <label class="radio"><input type="radio" name="access" value="open"><span>Anyone with the link<small>Only on networks you trust.</small></span></label>
+          </div>
+          <label class="check"><input type="checkbox" id="remember"><span>Remember devices when PierHop restarts<small class="muted" style="display:block">Off: every device needs the PIN or your approval again each time you start PierHop.</small></span></label>
+          <div class="row" id="new-pin-row">
+            <button id="new-pin">New PIN</button>
+            <span class="small muted">Devices already connected stay connected.</span>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Devices</h2>
+        <button id="remove-all" class="link danger small" hidden>Disconnect all</button>
+      </div>
+      <ul class="list" id="devices"></ul>
+      <p class="small muted" id="devices-note" style="margin:10px 0 0" hidden>Devices need the PIN or your approval again when PierHop restarts.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Text &amp; links</h2>
+        <button id="clear-texts" class="link small" hidden>Clear</button>
+      </div>
+      <textarea id="text" placeholder="Paste a link or some text to send"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="send-text" class="primary">Send</button>
+        <span class="small muted">to</span>
+        <select id="text-target" class="grow"></select>
+      </div>
+      <div id="texts" style="margin-top:6px"></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <div class="requests" id="requests"></div>
+
+    <section class="card">
+      <h2>Available to devices</h2>
+      <p class="muted small" style="margin:-4px 0 12px">Adding files doesn't send them. They show up on devices, which download only the ones they want. Devices can open folders and pick files from them, or download a whole folder as a zip. Use the visibility setting to limit an item to certain devices.</p>
+      <div class="row">
+        <button id="pick-files" class="primary">Add files…</button>
+        <button id="pick-folder">Add folder…</button>
+      </div>
+      <div id="drop">Or drop files here</div>
+      <ul class="list" id="shared"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Transfers</h2>
+      <div id="transfers"></div>
+    </section>
+
+    <section class="card">
+      <h2>Received from devices</h2>
+      <div class="small muted" id="save-dir"></div>
+      <ul class="list" id="received"></ul>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="/static/qrcode.min.js"></script>
+<script src="/static/host.js"></script>
+</body>
+</html>
