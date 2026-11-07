@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PierHop: anyone with a browser can get your files</title>
+<meta name="description" content="Create a pier, send the link, and swap files with anyone on any phone or computer, anywhere in the world. No app, no account, nothing uploaded.">
+<meta property="og:title" content="PierHop: anyone with a browser can get your files">
+<meta property="og:description" content="Create a pier, send the link, swap files. Any device, anywhere. No app, no account.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/img/pier-host-light.webp">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/Geist.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face { font-family: "Geist"; src: url("/fonts/Geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+/* Tokens shared with the app. Radii: buttons 12px, screenshots 16px, phone frames 30px. */
+:root {
+  --bg: #fafafa; --surface: #ffffff; --sunk: #f2f2f4; --text: #111113; --text-2: #5b5b63; --line: #e4e4e8;
+  --accent: #2563eb; --accent-hover: #1d4ed8; --on-accent: #ffffff;
+  --shadow: 0 1px 2px rgba(17, 24, 39, .06), 0 28px 56px -24px rgba(17, 24, 39, .28);
+  --bezel: #141416;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0b0d; --surface: #131316; --sunk: #18181c; --text: #ececef; --text-2: #a1a1aa; --line: #26262c;
+    --accent: #3b82f6; --accent-hover: #60a5fa;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 28px 56px -24px rgba(0, 0, 0, .8);
+    --bezel: #2a2a30;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 18px/1.6 "Geist", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+img { display: block; max-width: 100%; height: auto; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 600px) { .wrap { padding: 0 18px; } body { font-size: 17px; } }
+.skip { position: absolute; left: 16px; top: -48px; background: var(--surface); padding: 8px 12px; border-radius: 10px; z-index: 30; }
+.skip:focus { top: 12px; }
+
+.top { height: 68px; display: flex; align-items: center; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; font-size: 19px; letter-spacing: -.015em; }
+.brand:hover { color: var(--text); }
+.brand .mark { width: 30px; height: 30px; color: var(--accent); }
+.top nav { margin-left: auto; display: flex; align-items: center; gap: 26px; font-size: 15.5px; }
+.top nav a:not(.btn) { color: var(--text-2); }
+.top nav a:not(.btn):hover { color: var(--text); }
+@media (max-width: 560px) { .top nav .hide-sm { display: none; } }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 600 17px/1 "Geist", sans-serif; padding: 16px 24px; border-radius: 12px; background: var(--accent); color: var(--on-accent); transition: background-color .15s, transform .1s; white-space: nowrap; }
+.btn:hover { background: var(--accent-hover); color: var(--on-accent); }
+.btn:active { transform: translateY(1px); }
+.btn.small { font-size: 15px; padding: 10px 15px; border-radius: 10px; }
+
+/* Hero */
+.hero { padding: 76px 0 0; text-align: center; }
+@media (max-width: 600px) { .hero { padding-top: 44px; } }
+h1 { font-size: clamp(42px, 7vw, 82px); line-height: 1; letter-spacing: -.045em; font-weight: 650; margin: 0 auto; max-width: 11.5em; }
+.sub { font-size: clamp(19px, 2.2vw, 23px); line-height: 1.45; color: var(--text-2); max-width: 30em; margin: 26px auto 36px; }
+.cta-row { display: flex; justify-content: center; align-items: center; gap: 22px; flex-wrap: wrap; }
+.cta-row .free { color: var(--text-2); font-size: 16px; }
+
+.stage { position: relative; aspect-ratio: 100 / 56; margin: 72px auto 0; max-width: 1060px; }
+.stage .desk, .stage .phone { position: absolute; margin: 0; }
+.stage .desk { left: 0; top: 0; width: 82%; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--surface); }
+.phone-frame { border-radius: 30px; overflow: hidden; border: 7px solid var(--bezel); background: var(--bezel); box-shadow: var(--shadow); }
+.stage .phone { right: 0; bottom: 0; width: 25%; }
+@media (max-width: 700px) {
+  .stage { aspect-ratio: 100 / 106; margin-top: 48px; }
+  .stage .desk { width: 100%; border-radius: 10px; }
+  .stage .phone { width: 40%; right: 3%; }
+  .phone-frame { border-width: 4px; border-radius: 20px; }
+}
+
+section { padding: 132px 0 0; }
+@media (max-width: 600px) { section { padding-top: 92px; } }
+h2 { font-size: clamp(32px, 4.4vw, 52px); line-height: 1.06; letter-spacing: -.035em; font-weight: 650; margin: 0 0 18px; max-width: 16ch; }
+.lede { color: var(--text-2); font-size: 20px; max-width: 32em; margin: 0; }
+
+/* How it works: three verbs */
+.steps { list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
+.steps li { border-top: 2px solid var(--text); padding-top: 22px; }
+.steps h3 { font-size: 24px; letter-spacing: -.02em; font-weight: 650; margin: 0 0 8px; }
+.steps p { margin: 0; color: var(--text-2); }
+@media (max-width: 820px) { .steps { grid-template-columns: 1fr; gap: 36px; } }
+
+/* Anywhere, any device */
+.world { display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: center; }
+@media (max-width: 860px) { .world { grid-template-columns: 1fr; gap: 36px; } }
+.devices { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--line); }
+.devices li { padding: 18px 0; border-bottom: 1px solid var(--line); font-size: 21px; font-weight: 550; letter-spacing: -.015em; }
+.devices li:nth-child(odd) { padding-right: 16px; }
+.devices small { display: block; font-size: 15px; font-weight: 400; color: var(--text-2); letter-spacing: 0; }
+
+/* The one rule */
+.rule { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 56px; display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+.rule h2 { margin: 0; }
+.rule p { margin: 0 0 16px; color: var(--text-2); font-size: 19px; }
+.rule p:last-child { margin: 0; }
+.rule strong { color: var(--text); font-weight: 600; }
+@media (max-width: 860px) { .rule { grid-template-columns: 1fr; gap: 20px; padding: 32px 24px; } }
+
+.faq { display: grid; grid-template-columns: 1fr 1fr; gap: 40px 56px; margin: 48px 0 0; }
+.faq dt { font-weight: 600; font-size: 19px; margin-bottom: 6px; letter-spacing: -.01em; }
+.faq dd { margin: 0; color: var(--text-2); font-size: 17px; }
+@media (max-width: 760px) { .faq { grid-template-columns: 1fr; gap: 28px; } }
+
+.final { text-align: center; }
+.final h2 { margin: 0 auto 20px; }
+.final .lede { margin: 0 auto 36px; }
+
+footer { margin-top: 140px; border-top: 1px solid var(--line); padding: 28px 0 40px; font-size: 15px; color: var(--text-2); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+footer nav { display: flex; flex-wrap: wrap; gap: 22px; margin-left: auto; }
+footer a { color: var(--text-2); }
+footer a:hover { color: var(--text); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/" aria-label="PierHop home">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>
+      PierHop
+    </a>
+    <nav aria-label="Main">
+      <a class="hide-sm" href="#how">How it works</a>
+      <a class="hide-sm" href="/developers">Developers</a>
+      <a class="btn small" href="/new">Create a pier</a>
+    </nav>
+  </header>
+</div>
+
+<main id="main">
+  <div class="hero">
+    <div class="wrap">
+      <h1>If they have a browser, they can get your files.</h1>
+      <p class="sub">Create a pier, send the link, and swap files with anyone on any phone or computer, anywhere in the world.</p>
+      <div class="cta-row">
+        <a class="btn" href="/new">Create a pier</a>
+        <span class="free">Free. No app, no sign-up.</span>
+      </div>
+
+      <div class="stage">
+        <picture class="desk">
+          <source srcset="/img/pier-host-dark.webp" media="(prefers-color-scheme: dark)">
+          <img src="/img/pier-host-light.webp" width="2400" height="1500" fetchpriority="high"
+               alt="A pier open in a laptop browser: its invite link, the people on it, and the files each person is sharing.">
+        </picture>
+        <picture class="phone phone-frame">
+          <source srcset="/img/pier-guest-dark.webp" media="(prefers-color-scheme: dark)">
+          <img src="/img/pier-guest-light.webp" width="780" height="1688"
+               alt="The same pier on a phone, where a guest downloads a file the host shared.">
+        </picture>
+      </div>
+    </div>
+  </div>
+
+  <section id="how">
+    <div class="wrap">
+      <h2>As easy as starting a video call.</h2>
+      <p class="lede">A pier is a room for files. You open it, people join, and everyone in it can share.</p>
+      <ol class="steps">
+        <li>
+          <h3>Create a pier</h3>
+          <p>One tap gives you a link. That link is your pier.</p>
+        </li>
+        <li>
+          <h3>Let people in</h3>
+          <p>Send the link to anyone. When they open it, you get a request. Tap <b>Let in</b>, or don't.</p>
+        </li>
+        <li>
+          <h3>Swap files</h3>
+          <p>Everyone on the pier can share files, and everyone can download them. Both ways, any device.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap world">
+      <div>
+        <h2>Lagos to Melbourne. Same pier.</h2>
+        <p class="lede">Your friend in India, your client in Australia, your mum on her old Android. If they can open a link, they can join your pier and get your files.</p>
+      </div>
+      <ul class="devices" aria-label="Works on">
+        <li>iPhone<small>Safari, Chrome</small></li>
+        <li>Android<small>Any browser</small></li>
+        <li>Windows<small>Edge, Chrome, Firefox</small></li>
+        <li>Mac<small>Safari, Chrome</small></li>
+        <li>iPad and tablets<small>Any browser</small></li>
+        <li>Chromebook and Linux<small>Any browser</small></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="rule">
+        <h2>Nothing is uploaded. Ever.</h2>
+        <div>
+          <p>Files go straight from your device to theirs. There's no cloud copy, no storage and no account, so there's nothing to leak and nothing to delete.</p>
+          <p><strong>The one catch: you both need to be online at the same time.</strong> Keep the pier open until people have your files. When you close it, the pier ends.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <h2>Questions</h2>
+      <dl class="faq">
+        <div><dt>Do my friends need an app or an account?</dt><dd>No. They open your link in whatever browser they have, type their name, and wait for you to let them in.</dd></div>
+        <div><dt>Is it really free?</dt><dd>Yes. No premium tier, no ads, no sign-up. PierHop is open source.</dd></div>
+        <div><dt>Who can see my files?</dt><dd>Only the people you let onto your pier. You can remove anyone, and the pier disappears when you end it.</dd></div>
+        <div><dt>Someone sent me a pier link. What now?</dt><dd>Open it, type your name and wait a moment. Once they let you in, you'll see their files and can share your own.</dd></div>
+        <div><dt>What happens if I close the tab?</dt><dd>Your pier ends and the files you shared stop being available. Nothing stays behind anywhere.</dd></div>
+        <div><dt>Does it work on mobile data?</dt><dd>Yes. Wi-Fi, mobile data, home or abroad: it works wherever you can open a web page.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <h2>Got something to send?</h2>
+      <p class="lede">Your pier is one tap away.</p>
+      <a class="btn" href="/new">Create a pier</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>PierHop is free and open source.</span>
+    <nav aria-label="Footer">
+      <a href="/developers">Developers</a>
+      <a href="https://github.com/OlutobiOgunsola/pierhop">GitHub</a>
+      <a href="https://github.com/OlutobiOgunsola/pierhop/issues">Report a problem</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

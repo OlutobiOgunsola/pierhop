@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>PierHop</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/Geist.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face { font-family: "Geist"; src: url("/fonts/Geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+/* Same tokens as the website. Radii: controls 10-12px, panels 16px, tiles 9px. */
+:root {
+  --bg: #fafafa; --surface: #ffffff; --sunk: #f2f2f4; --text: #111113; --text-2: #5b5b63; --text-3: #8b8b94; --line: #e4e4e8;
+  --accent: #2563eb; --accent-hover: #1d4ed8; --accent-soft: #eef3fe; --on-accent: #ffffff;
+  --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0b0d; --surface: #131316; --sunk: #1c1c21; --text: #ececef; --text-2: #a1a1aa; --text-3: #71717a; --line: #26262c;
+    --accent: #3b82f6; --accent-hover: #60a5fa; --accent-soft: #15203a; --ok: #22c55e; --warn: #f59e0b; --bad: #f87171;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Geist", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+a { color: var(--accent); text-decoration: none; }
+
+.top { max-width: 1080px; margin: 0 auto; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 9px; color: var(--text); font-weight: 600; font-size: 17px; letter-spacing: -.015em; }
+.brand .mark { width: 26px; height: 26px; color: var(--accent); }
+.top .grow { flex: 1; }
+.count { color: var(--text-2); font-size: 14px; }
+
+button, .btn { font: 500 15px/1 "Geist", ui-sans-serif, system-ui, sans-serif; min-height: 40px; padding: 0 16px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; transition: background-color .15s, border-color .15s, color .15s, transform .1s; }
+button:hover, .btn:hover { background: var(--sunk); }
+button:active, .btn:active { transform: translateY(1px); }
+.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.big { min-height: 50px; font-size: 16px; padding: 0 22px; border-radius: 12px; }
+.wide { width: 100%; }
+.quiet { border-color: transparent; background: none; color: var(--text-2); }
+.quiet:hover { color: var(--text); }
+.danger:hover { color: var(--bad); }
+.link { min-height: 0; padding: 2px 0; border: none; background: none; color: var(--accent); font-size: 14px; }
+.link:hover { background: none; color: var(--accent-hover); }
+button:disabled { opacity: .5; cursor: default; }
+input[type=text] { font: 16px/1.4 "Geist", sans-serif; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; width: 100%; }
+input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Single-message screens: name, waiting, ended */
+.screen { max-width: 420px; margin: 9vh auto 0; padding: 0 20px 48px; text-align: center; }
+.screen h1 { font-size: 28px; line-height: 1.15; letter-spacing: -.03em; font-weight: 600; margin: 0 0 10px; text-wrap: balance; }
+.screen p { color: var(--text-2); margin: 0 0 24px; text-wrap: pretty; }
+.screen form { display: grid; gap: 12px; text-align: left; }
+.screen label { font-size: 13.5px; font-weight: 500; color: var(--text-2); }
+.screen .err { color: var(--bad); font-size: 14px; min-height: 1.4em; }
+.spinner { width: 26px; height: 26px; border: 2.5px solid var(--line); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 22px; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* The room */
+.room { max-width: 1080px; margin: 0 auto; padding: 4px 20px 56px; display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .room { grid-template-columns: 1fr; } .room.host .side { order: -1; } }
+.col { display: grid; gap: 16px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; min-width: 0; }
+.card h2 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.muted { color: var(--text-2); }
+.small { font-size: 13px; }
+.empty { color: var(--text-3); padding: 2px 0 4px; }
+
+.invite .link-box { display: flex; align-items: center; gap: 8px; background: var(--sunk); border-radius: 12px; padding: 6px 6px 6px 14px; }
+.invite .link-box span { flex: 1; min-width: 0; font: 14px "Geist Mono", ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.invite .actions { display: flex; gap: 8px; margin-top: 10px; }
+.invite .actions button { flex: 1; }
+.qr { display: none; background: #fff; border-radius: 12px; padding: 10px; width: 168px; margin: 16px auto 0; border: 1px solid var(--line); }
+.qr svg { display: block; width: 100%; height: auto; }
+@media (min-width: 861px) { .qr { display: block; } }
+
+.request { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.request .who { flex: 1; min-width: 150px; }
+.request .who b { font-weight: 600; }
+
+.people { list-style: none; margin: 0; padding: 0; }
+.people li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+.people li:first-child { border-top: none; padding-top: 0; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 600; font-size: 14px; flex: none; }
+.people .grow { flex: 1; min-width: 0; }
+.people .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.people .meta { font-size: 13px; color: var(--text-2); }
+.state { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); flex: none; }
+.state.on { background: var(--ok); }
+
+.drop { border: 1.5px dashed var(--line); border-radius: 14px; padding: 22px; text-align: center; color: var(--text-2); transition: border-color .15s, background-color .15s; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.drop button { margin-top: 10px; }
+@media (pointer: coarse) { .drop { display: none; } }
+.group + .group { margin-top: 18px; }
+.group h3 { font-size: 13.5px; font-weight: 600; color: var(--text-2); margin: 0 0 4px; }
+.files { list-style: none; margin: 0; padding: 0; }
+.files li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.files li:first-child { border-top: none; }
+.ft { width: 38px; height: 38px; border-radius: 9px; background: var(--sunk); color: var(--text-2); display: grid; place-items: center; flex: none; font: 600 10px/1 "Geist Mono", monospace; letter-spacing: .02em; text-transform: uppercase; }
+.files .grow { flex: 1; min-width: 0; }
+.files .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.files .meta { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; background: var(--sunk); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.bar > div { height: 100%; background: var(--accent); border-radius: 2px; width: 0; transition: width .2s; }
+.done .bar > div { background: var(--ok); }
+.failed .bar > div { background: var(--bad); }
+.icon-btn { min-height: 32px; width: 32px; padding: 0; border: none; background: none; color: var(--text-3); font-size: 18px; border-radius: 8px; }
+.icon-btn:hover { background: var(--sunk); color: var(--bad); }
+.note { font-size: 13px; color: var(--text-2); margin: 14px 0 0; }
+
+.banner { max-width: 1080px; margin: 0 auto 12px; padding: 0 20px; }
+.banner div { background: color-mix(in srgb, var(--warn) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warn) 32%, transparent); color: var(--text); padding: 10px 14px; border-radius: 12px; font-size: 14px; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 8px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 20; font-size: 14.5px; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } .spinner { animation-duration: 3s; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/" aria-label="PierHop home">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>
+    PierHop
+  </a>
+  <span class="grow"></span>
+  <span class="count" id="count" hidden></span>
+  <button class="quiet danger" id="leave" hidden>Leave</button>
+</header>
+
+<!-- Your name, before creating or joining -->
+<section class="screen" id="s-name" hidden>
+  <h1 id="name-title">Create your pier</h1>
+  <p id="name-sub">Anyone you invite can join from anywhere and swap files with you.</p>
+  <form id="name-form">
+    <label for="name">Your name</label>
+    <input type="text" id="name" maxlength="40" autocomplete="name" placeholder="So people know it's you" required>
+    <div class="err" id="name-err"></div>
+    <button class="primary big wide" id="name-go" type="submit">Create pier</button>
+  </form>
+</section>
+
+<section class="screen" id="s-wait" hidden>
+  <div class="spinner"></div>
+  <h1>Asking to join</h1>
+  <p id="wait-msg">The pier's host will let you in.</p>
+  <button class="quiet" id="wait-cancel">Cancel</button>
+</section>
+
+<section class="screen" id="s-msg" hidden>
+  <h1 id="msg-title"></h1>
+  <p id="msg-text"></p>
+  <a class="btn primary big" href="/new">Create your own pier</a>
+</section>
+
+<div class="banner" id="host-away" hidden><div>The host lost connection. Waiting for them to come back…</div></div>
+
+<!-- The pier itself -->
+<main class="room" id="s-room" hidden>
+  <div class="col">
+    <div id="requests" class="col"></div>
+    <section class="card">
+      <div class="head">
+        <h2>Files</h2>
+        <button class="primary" id="add">Share files</button>
+        <input type="file" id="picker" multiple hidden>
+      </div>
+      <div id="files"></div>
+      <div class="drop" id="drop">Drop files here to share them with everyone on this pier</div>
+      <p class="note">Files go straight from your device to theirs. Keep this page open while people download.</p>
+    </section>
+  </div>
+  <div class="col side">
+    <section class="card invite">
+      <div class="head"><h2>Invite people</h2></div>
+      <div class="link-box"><span id="invite-link"></span></div>
+      <div class="actions">
+        <button id="copy">Copy link</button>
+        <button id="share" hidden>Share</button>
+      </div>
+      <div class="qr" id="qr" aria-label="QR code for the pier link"></div>
+    </section>
+    <section class="card">
+      <div class="head"><h2>On this pier</h2></div>
+      <ul class="people" id="people"></ul>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/qrcode.min.js"></script>
+<script src="/pier.js"></script>
+</body>
+</html>

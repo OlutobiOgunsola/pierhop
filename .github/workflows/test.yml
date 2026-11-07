@@ -24,6 +24,8 @@ jobs:
         run: |
           node --check pierhop/static/host.js
           node --check pierhop/static/device.js
+          node --check web/public/pier.js
+          node --check --input-type=module < web/src/worker.js
       - name: Run tests
         run: python -m unittest discover -s tests -v
       - name: Build package

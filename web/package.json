@@ -1,0 +1,13 @@
+{
+  "name": "pierhop-web",
+  "private": true,
+  "type": "module",
+  "description": "PierHop piers: share files with anyone through a link, browser to browser.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.86.0"
+  }
+}

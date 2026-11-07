@@ -1,10 +1,50 @@
-<p><img src="site/logo.svg" alt="" width="72"></p>
+<p><img src="web/public/logo.svg" alt="" width="72"></p>
 
 # PierHop
 
-Move files and text between your computer and your phone, tablet or any other
-device over Wi-Fi. The other devices need nothing installed: they open a link
-in their browser. There's no account, no cloud and no paywall.
+**If they have a browser, they can get your files.**
+
+Create a pier, send the link, and swap files with anyone on any phone or
+computer, anywhere in the world. No app, no account, nothing uploaded.
+
+## How piers work
+
+1. **Create a pier.** You get a link like `pierhop.com/kqv-dhmw-tpx`.
+2. **Let people in.** Anyone who opens the link types their name and knocks.
+   You choose **Let in** or **Deny**.
+3. **Swap files.** Everyone on the pier can share files and download what
+   others share, in both directions.
+
+Files go straight from one browser to another over WebRTC. The server only
+keeps the guest list and helps browsers find each other; it never sees a file
+and stores nothing. The one catch: whoever is sharing has to stay online until
+the others have the file. When the host ends the pier, it's gone.
+
+### Run it locally
+
+The website and the pier server live in `web/`: a static site plus a
+Cloudflare Worker with one Durable Object per pier.
+
+```
+cd web
+npm install
+npx wrangler dev          # http://localhost:8787
+```
+
+`npx wrangler deploy` publishes it to your Cloudflare account. Wrangler is
+pinned to 4.86, the last version that runs on Node.js 20.
+
+`web/test/pier.e2e.mjs` is an end-to-end test that plays four people in
+separate browser sessions (create, knock, let in, deny, remove, files in every
+direction checked byte for byte, host refresh, end). Start `wrangler dev` and a
+Chrome with `--remote-debugging-port=9336`, then run
+`node --experimental-websocket web/test/pier.e2e.mjs`.
+
+## The PierHop app for your own network
+
+The `pierhop` Python app serves a page to every device on your Wi-Fi from a
+Mac or Linux machine. Use it to share whole folders, preview photos and video,
+and keep it running all day. The other devices need nothing installed.
 
 ```
 pipx install pierhop    # or: pip install pierhop
@@ -18,7 +58,7 @@ is older, so run `pip install --upgrade pip` first.
 A control page opens in your computer's browser. Scan its QR code with your
 phone and you're connected.
 
-## What it does
+### What it does
 
 - **Computer → devices:** add files or folders with the native file picker,
   or drag them onto the control page. Adding a file doesn't send it; it shows
@@ -49,7 +89,7 @@ phone and you're connected.
 
 Everything stays on your local network. Nothing is uploaded anywhere.
 
-## Who can connect
+### Who can connect
 
 Pick one on the control page (Settings → *Who can connect*) or with `--access`:
 
@@ -68,7 +108,7 @@ reconnect by themselves, turn on Settings → *Remember devices when PierHop
 restarts*. Devices not seen for 90 days are forgotten even then, and turning
 the setting off deletes the saved ones.
 
-## Usage
+### Usage
 
 ```
 pierhop [FILES/FOLDERS ...] [options]
@@ -95,7 +135,7 @@ Settings you change on the control page are remembered for that port. Flags appl
 Install with `pip install "pierhop[qr]"` to also print the QR code in the
 terminal.
 
-## Requirements
+### Requirements
 
 - Python 3.9+ (the version that ships with macOS Command Line Tools works)
 - The computer and devices on the same Wi-Fi network
@@ -107,7 +147,7 @@ network connections. Click **Allow**, or devices won't be able to connect.
 It also runs on Linux. The native file picker and notifications are
 macOS-only, so on Linux you drag files onto the page instead.
 
-## Security notes
+### Security notes
 
 - Traffic is plain HTTP on your LAN. Anyone who can sniff your Wi-Fi could see
   what's transferred, so use it on networks you trust.
@@ -126,7 +166,7 @@ macOS-only, so on Linux you drag files onto the page instead.
 - The device link has a random path by default. With a custom path, keep the
   PIN or approval on.
 
-## Troubleshooting
+### Troubleshooting
 
 - **A device can't open the link:** check that both are on the same network,
   without guest-network or "AP isolation" mode. Also check System Settings →
@@ -144,15 +184,11 @@ python3 -m pierhop --no-browser           # run from the checkout
 
 CI runs the tests on macOS and Linux with Python 3.9 and 3.13.
 
-The landing page is the static site in `site/`, with no build step. To host it
-on Cloudflare Pages, connect the repo, leave the build command empty, and set
-the output directory to `site`.
-
 ## Credits
 
 The QR code generator is [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator)
 by Kazuhiko Arase (MIT). The landing page uses the [Geist](https://github.com/vercel/geist-font)
-typefaces (SIL Open Font License, included in `site/fonts/`).
+typefaces (SIL Open Font License, included in `web/public/fonts/` and `pierhop/static/`).
 
 ## License
 

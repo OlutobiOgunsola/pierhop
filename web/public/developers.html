@@ -3,18 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PierHop: send files from your Mac to any phone</title>
-<meta name="description" content="PierHop runs on your Mac. Scan its QR code with your phone and download what you need. No app, no account, free and open source.">
-<meta property="og:title" content="PierHop: send files from your Mac to any phone">
-<meta property="og:description" content="Scan a QR code, pick what you need. No phone app, no account, no cloud. Free and open source.">
-<meta property="og:type" content="website">
-<meta property="og:image" content="img/host-light.webp">
+<title>PierHop for developers</title>
+<meta name="description" content="PierHop is open source. Run your own pier server, or share a computer's folders over your own network with the PierHop app.">
 <meta name="color-scheme" content="light dark">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="preload" href="fonts/Geist.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
-@font-face { font-family: "Geist"; src: url("fonts/Geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist"; src: url("/fonts/Geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 
 /* Tokens. One accent (PierHop's blue, as in the app), one cool gray family.
    Radii: buttons and code 10px, screenshots 14px, phone frames 28px. */
@@ -148,20 +143,23 @@ footer a:hover { color: var(--text); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
+<style>
+.stack { display: grid; gap: 14px; margin-top: 28px; max-width: 760px; }
+.stack p { color: var(--text-2); margin: 0; }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 40px; }
+.how h3 { font-size: 17px; margin: 0 0 6px; }
+.how p { color: var(--text-2); margin: 0; font-size: 15.5px; }
+@media (max-width: 860px) { .how { grid-template-columns: 1fr; } }
+</style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="./" aria-label="PierHop home">
-      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>
-      PierHop
-    </a>
+    <a class="brand" href="/" aria-label="PierHop home"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>PierHop</a>
     <nav aria-label="Main">
-      <a href="#faq">FAQ</a>
       <a href="https://github.com/OlutobiOgunsola/pierhop">GitHub</a>
-      <a class="btn small" href="#install">Get PierHop</a>
+      <a class="btn small" href="/new">Create a pier</a>
     </nav>
   </header>
 </div>
@@ -169,154 +167,84 @@ footer a:hover { color: var(--text); }
 <main id="main">
   <div class="hero">
     <div class="wrap">
-      <h1>Send files from your Mac to any phone, over Wi-Fi.</h1>
-      <p class="sub">PierHop runs on your Mac. Scan its QR code with your phone and download what you need. No app, no account, free.</p>
+      <h1>PierHop for developers.</h1>
+      <p class="sub">PierHop is open source under the MIT license. Host the pier server yourself, or run the PierHop app to share a computer's folders over your own network.</p>
       <div class="actions">
-        <a class="btn" href="#install">Get PierHop</a>
-        <a class="arrow" href="http://127.0.0.1:8765/" title="Opens the control page of the PierHop running on this Mac">Open PierHop</a>
-      </div>
-
-      <div class="stage">
-        <picture class="desk">
-          <source srcset="img/host-dark.webp" media="(prefers-color-scheme: dark)">
-          <img src="img/host-light.webp" width="2400" height="1613" fetchpriority="high"
-               alt="PierHop's control page on a Mac: a QR code and PIN for connecting, a Pixel 8 and an iPad online, a shared folder and two files, and a song downloading to the Pixel 8.">
-        </picture>
-        <picture class="phone phone-frame">
-          <source srcset="img/phone-folder-dark.webp" media="(prefers-color-scheme: dark)">
-          <img src="img/phone-folder-light.webp" width="780" height="1688"
-               alt="The same PierHop on a Pixel 8's browser, showing the photos inside a shared folder, each with a Download button.">
-        </picture>
+        <a class="btn" href="https://github.com/OlutobiOgunsola/pierhop">View on GitHub</a>
+        <a class="arrow" href="#local">Run it on your network</a>
       </div>
     </div>
   </div>
 
-  <section>
+  <section id="server">
     <div class="wrap">
-      <h2>Your phone sees what you share. Nothing more.</h2>
-      <p class="lede">Adding a file on your Mac doesn't send it anywhere. It shows up on your devices, and each one downloads only what it picks.</p>
-
-      <div class="bento">
-        <div class="panel big">
-          <div>
-            <h3>Open folders, preview, then download</h3>
-            <p>Browse a shared folder like a file manager. Photos, video and music open right in the browser. Take one file, or the whole folder as a zip that starts instantly, even past 4 GB.</p>
-          </div>
-          <div class="phone-frame">
-            <img src="img/phone-viewer.webp" width="780" height="1688" loading="lazy"
-                 alt="A photo of a red tram open in PierHop's viewer on a phone, with Download and next and previous buttons.">
-          </div>
-        </div>
-        <div class="panel">
-          <div>
-            <h3>Nobody gets in without you</h3>
-            <p>Devices enter a PIN, or you approve each one. Every device has to ask again when PierHop restarts.</p>
-          </div>
-          <picture class="ui">
-            <source srcset="img/request-dark.webp" media="(prefers-color-scheme: dark)">
-            <img src="img/request-light.webp" width="1592" height="127" loading="lazy" alt="A request on the control page: Galaxy Tab S9 wants to connect, with Allow and Deny buttons.">
-          </picture>
-        </div>
-        <div class="panel">
-          <div>
-            <h3>Phone to Mac works too</h3>
-            <p>Tap <b>Choose files</b> on the phone. Files land in Downloads, and your Mac shows a notification.</p>
-          </div>
-          <picture class="ui">
-            <source srcset="img/received-dark.webp" media="(prefers-color-scheme: dark)">
-            <img src="img/received-light.webp" width="1592" height="316" loading="lazy" alt="The Received from devices list on the control page, with a photo from the Pixel 8 and Open and Show in Finder buttons.">
-          </picture>
-        </div>
+      <h2>How piers work</h2>
+      <div class="how">
+        <div><h3>A tiny front desk</h3><p>A Cloudflare Worker with one Durable Object per pier keeps the guest list, passes join requests to the host and relays WebRTC connection setup.</p></div>
+        <div><h3>Files go peer to peer</h3><p>Every browser on a pier connects directly to the others over WebRTC data channels. File bytes never touch the server.</p></div>
+        <div><h3>Nothing is stored</h3><p>The server keeps no files and no accounts. It remembers only that a pier code was used, so an old link can never lead to someone else's pier.</p></div>
       </div>
-
-      <div class="details">
-        <div><h3>Choose who sees what</h3><p>Limit any file or folder to specific devices. Everyone else won't see it at all.</p></div>
-        <div><h3>Many devices at once</h3><p>See who's online, rename devices, and disconnect any of them.</p></div>
-        <div><h3>Text and links</h3><p>Paste a link on your Mac and tap it on your phone, or send a note the other way.</p></div>
-        <div><h3>Live progress</h3><p>Every transfer shows its speed and time left, on both ends.</p></div>
-        <div><h3>Any browser</h3><p>Android, iPhone, iPad and other computers all work. Nothing to install on them.</p></div>
-        <div><h3>No size limit</h3><p>Files stream straight from disk, so multi-gigabyte videos and folders are fine.</p></div>
+      <div class="install" style="margin-top:56px">
+        <aside>
+          <h2>Host your own</h2>
+          <p>You need Node.js and a Cloudflare account to deploy. Local development needs neither an account nor the internet.</p>
+        </aside>
+        <ol class="steps">
+          <li><h3>Get the code</h3><div class="cmd"><code>git clone https://github.com/OlutobiOgunsola/pierhop</code><button class="copy" data-copy="git clone https://github.com/OlutobiOgunsola/pierhop">Copy</button></div><div class="cmd"><code>cd pierhop/web && npm install</code><button class="copy" data-copy="cd pierhop/web && npm install">Copy</button></div></li>
+          <li><h3>Run it locally</h3><p>Starts the website and the pier server at http://localhost:8787.</p><div class="cmd"><code>npx wrangler dev</code><button class="copy" data-copy="npx wrangler dev">Copy</button></div></li>
+          <li><h3>Deploy</h3><p>Publishes to your Cloudflare account.</p><div class="cmd"><code>npx wrangler deploy</code><button class="copy" data-copy="npx wrangler deploy">Copy</button></div></li>
+        </ol>
       </div>
     </div>
   </section>
 
-  <section>
+  <section id="local">
     <div class="wrap">
-      <p class="statement">There is no PierHop server. <span>Files go from your Mac to your phone over your own Wi-Fi, and nothing is uploaded anywhere.</span></p>
-      <p class="caveat">The code is open, so you can check. One honest limit: PierHop uses plain HTTP on your local network, so use it on Wi-Fi you trust, like home or the office. <a href="https://github.com/OlutobiOgunsola/pierhop">Read the source</a></p>
-    </div>
-  </section>
-
-  <section id="install">
-    <div class="wrap install">
-      <aside>
-        <h2>Install PierHop</h2>
-        <p>PierHop runs on macOS and Linux with Python 3.9 or newer. Phones and other devices need only a browser.</p>
-        <p>No Python yet? On a Mac, run <code class="inline">xcode-select --install</code>.</p>
-        <p><a class="arrow" href="http://127.0.0.1:8765/">Already running? Open PierHop</a></p>
-      </aside>
-      <ol class="steps">
-        <li>
-          <h3>Install</h3>
-          <p>With <a href="https://pipx.pypa.io/">pipx</a>, or pip if you prefer.</p>
-          <div class="cmd"><code>pipx install pierhop</code><button class="copy" data-copy="pipx install pierhop">Copy</button></div>
-          <div class="cmd"><code>pip install pierhop</code><button class="copy" data-copy="pip install pierhop">Copy</button></div>
-        </li>
-        <li>
-          <h3>Run</h3>
-          <p>The control page opens in your browser. The first time, macOS asks whether Python may accept incoming connections. Click Allow.</p>
-          <div class="cmd"><code>pierhop</code><button class="copy" data-copy="pierhop">Copy</button></div>
-        </li>
-        <li>
-          <h3>Scan</h3>
-          <p>Point your phone's camera at the QR code and enter the PIN. Then add files or folders on your Mac, and they appear on the phone.</p>
-        </li>
-      </ol>
-    </div>
-  </section>
-
-  <section id="faq">
-    <div class="wrap">
-      <h2>Questions</h2>
-      <dl class="faq">
-        <div><dt>Do I need an app on my phone?</dt><dd>No. The phone opens a link in its browser, whichever one it has.</dd></div>
-        <div><dt>Is it really free?</dt><dd>Yes. PierHop is open source under the MIT license. No premium tier, no account, no ads.</dd></div>
-        <div><dt>Do my files go through the internet?</dt><dd>No. Your devices connect to your Mac directly over your Wi-Fi. There's no server in between.</dd></div>
-        <div><dt>Can someone else on my Wi-Fi get in?</dt><dd>Not without the PIN or your approval. You can see every connected device and disconnect any of them.</dd></div>
-        <div><dt>My phone can't open the link.</dt><dd>Check that both are on the same network, not a guest network, and that the macOS firewall allows Python. A VPN can get in the way too.</dd></div>
-        <div><dt>Does it work on Windows?</dt><dd>Windows PCs can connect like any other device. Running PierHop itself needs macOS or Linux for now.</dd></div>
-      </dl>
+      <h2>Share a computer's folders over your own network</h2>
+      <p class="lede">The PierHop app runs on a Mac or Linux machine and serves a page to every device on the same network. It suits a home or office: share whole folders, preview photos and video, and keep it running all day.</p>
+      <div class="stage">
+        <picture class="desk">
+          <source srcset="/img/host-dark.webp" media="(prefers-color-scheme: dark)">
+          <img src="/img/host-light.webp" width="2400" height="1613" loading="lazy" alt="The PierHop app's control page on a Mac, with a QR code, connected devices, shared files and transfers.">
+        </picture>
+        <picture class="phone phone-frame">
+          <source srcset="/img/phone-folder-dark.webp" media="(prefers-color-scheme: dark)">
+          <img src="/img/phone-folder-light.webp" width="780" height="1688" loading="lazy" alt="A phone browsing a shared folder from the PierHop app.">
+        </picture>
+      </div>
+      <div class="install" style="margin-top:72px">
+        <aside>
+          <h2>Install the app</h2>
+          <p>Needs macOS or Linux with Python 3.9 or newer, and no other dependencies. Devices on the same network connect with a QR code.</p>
+          <p>Traffic on your network is plain HTTP, so use it on networks you trust.</p>
+        </aside>
+        <ol class="steps">
+          <li><h3>Install</h3><div class="cmd"><code>pipx install pierhop</code><button class="copy" data-copy="pipx install pierhop">Copy</button></div></li>
+          <li><h3>Run</h3><p>The control page opens in your browser. The first time, macOS asks whether Python may accept incoming connections: click Allow.</p><div class="cmd"><code>pierhop</code><button class="copy" data-copy="pierhop">Copy</button></div></li>
+          <li><h3>Connect</h3><p>Scan the QR code on the control page with a phone, enter the PIN, and add files or folders.</p></li>
+        </ol>
+      </div>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <span>PierHop is free and open source, made by Olutobi Ogunsola.</span>
+    <span>PierHop is free and open source.</span>
     <nav aria-label="Footer">
+      <a href="/">Home</a>
       <a href="https://github.com/OlutobiOgunsola/pierhop">GitHub</a>
-      <a href="https://github.com/OlutobiOgunsola/pierhop/issues">Report a bug</a>
-      <a href="https://pypi.org/project/pierhop/">PyPI</a>
       <a href="https://github.com/OlutobiOgunsola/pierhop/blob/main/LICENSE">MIT license</a>
     </nav>
   </div>
 </footer>
-
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 "use strict";
 for (const b of document.querySelectorAll("[data-copy]")) {
   b.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(b.dataset.copy);
-      b.textContent = "Copied";
-      setTimeout(() => (b.textContent = "Copy"), 1500);
-    } catch {
-      const t = document.getElementById("toast");
-      t.textContent = "Couldn't copy. Select the text instead.";
-      t.classList.add("show");
-      setTimeout(() => t.classList.remove("show"), 2000);
-    }
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1500); }
+    catch { const t = document.getElementById("toast"); t.textContent = "Couldn't copy. Select the text instead."; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2000); }
   });
 }
 </script>
