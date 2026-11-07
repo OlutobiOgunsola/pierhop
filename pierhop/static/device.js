@@ -2,7 +2,7 @@
 const $ = (id) => document.getElementById(id);
 const rendered = {};
 const GATES = { pin: "gate-pin", wait: "gate-wait", denied: "gate-denied", app: "app" };
-const ICONS = { image: "🖼", video: "🎬", audio: "🎵", text: "📄" };
+const FOLDER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/></svg>';
 const MAX_URL = 60000;  // the server reads request lines up to 64 KB
 let mode = null;
 
@@ -19,7 +19,7 @@ function el(tag, props, ...children) {
   for (const [k, v] of Object.entries(props || {})) {
     if (k === "class") n.className = v;
     else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
-    else if (k === "style") n.setAttribute("style", v);
+    else if (k === "style" || k.includes("-")) n.setAttribute(k, v);
     else n[k] = v;
   }
   for (const c of children) if (c != null) n.append(c.nodeType ? c : String(c));
@@ -159,6 +159,18 @@ function entries() {
   return view.ref ? (view.folder ? view.folder.entries : []) : topFiles;
 }
 
+// A small tile showing the file's extension, or a folder shape.
+function typeTile(name, kind) {
+  if (kind === "folder") {
+    const t = el("span", { class: "ft folder" });
+    t.innerHTML = FOLDER_SVG;
+    return t;
+  }
+  const dot = name.lastIndexOf(".");
+  const ext = dot > 0 && name.length - dot <= 5 ? name.slice(dot + 1) : "file";
+  return el("span", { class: "ft", "aria-hidden": "true" }, ext);
+}
+
 function countLabel(n) {
   return n + (n === 1 ? " file" : " files");
 }
@@ -234,7 +246,7 @@ function fileRow(f) {
     ? (f.count != null ? `${countLabel(f.count)} · ${size(f.size)}` : "Folder")
     : size(f.size);
   const inner = [
-    el("span", { class: "icon" }, folder ? "🗂" : ICONS[f.preview] || "📄"),
+    typeTile(f.name, f.kind),
     el("span", { class: "text" }, el("span", { class: "name" }, f.name), el("span", { class: "size" }, sub)),
   ];
 

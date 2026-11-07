@@ -1,7 +1,8 @@
 "use strict";
 const KEY = document.querySelector('meta[name="pierhop-key"]').content;
 const $ = (id) => document.getElementById(id);
-const KIND_ICONS = { android: "📱", "android-tablet": "📱", iphone: "📱", ipad: "📱", mac: "💻", windows: "💻", linux: "💻", other: "🔗" };
+const KIND_LABELS = { android: "Android phone", "android-tablet": "Android tablet", iphone: "iPhone", ipad: "iPad", mac: "Mac", windows: "Windows PC", linux: "Linux PC", other: "Browser" };
+const FOLDER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/></svg>';
 const rendered = {};
 const openTargets = new Set();
 let state = null;
@@ -11,7 +12,7 @@ function el(tag, props, ...children) {
   for (const [k, v] of Object.entries(props || {})) {
     if (k === "class") n.className = v;
     else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
-    else if (k === "style") n.setAttribute("style", v);
+    else if (k === "style" || k.includes("-")) n.setAttribute(k, v);
     else n[k] = v;
   }
   for (const c of children) if (c != null) n.append(c.nodeType ? c : String(c));
@@ -23,6 +24,18 @@ function size(n) {
   let i = 0;
   while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
   return (i === 0 ? n : n.toFixed(n < 10 ? 1 : 0)) + " " + u[i];
+}
+
+// A small tile showing the file's extension, or a folder shape.
+function typeTile(name, kind) {
+  if (kind === "folder") {
+    const t = el("span", { class: "ft folder" });
+    t.innerHTML = FOLDER_SVG;
+    return t;
+  }
+  const dot = name.lastIndexOf(".");
+  const ext = dot > 0 && name.length - dot <= 5 ? name.slice(dot + 1) : "file";
+  return el("span", { class: "ft", "aria-hidden": "true" }, ext);
 }
 
 function ago(t) {
@@ -131,10 +144,9 @@ function render(s) {
     box.replaceChildren();
     for (const r of reqs) {
       box.append(el("div", { class: "request" },
-        el("span", { style: "font-size:20px" }, KIND_ICONS[r.kind] || "🔗"),
         el("div", { class: "grow" },
           el("div", {}, el("strong", {}, r.name), " wants to connect"),
-          el("div", { class: "small muted" }, r.ip)),
+          el("div", { class: "meta-line" }, [KIND_LABELS[r.kind], r.ip].filter(Boolean).join(" · "))),
         el("button", { class: "primary", onclick: () => act("devices/approve", { id: r.id }, `${r.name} connected`) }, "Allow"),
         el("button", { onclick: () => act("devices/deny", { id: r.id }) }, "Deny"),
       ));
@@ -156,11 +168,10 @@ function render(s) {
       ul.append(el("li", {},
         el("div", { class: "line" },
           el("span", { class: "dot" + (d.online ? " on" : ""), title: d.online ? "Online" : "Offline" }),
-          el("span", {}, KIND_ICONS[d.kind] || "🔗"),
           input,
           el("button", { class: "link danger", onclick: () => act("devices/remove", { id: d.id }, `${d.name} disconnected`) }, "Disconnect")),
-        el("div", { class: "small muted", style: "margin-left:40px" },
-          [d.ip, d.online ? "online" : "last seen " + ago(d.last_seen)].filter(Boolean).join(" · ")),
+        el("div", { class: "meta-line indent" },
+          [KIND_LABELS[d.kind], d.ip, d.online ? "online" : "last seen " + ago(d.last_seen)].filter(Boolean).join(" · ")),
       ));
     }
   });
@@ -181,8 +192,9 @@ function render(s) {
     for (const f of s.shared) {
       const li = el("li", {},
         el("div", { class: "line" },
-          el("span", { class: "name", title: f.name }, (f.kind === "folder" ? "🗂 " : "") + f.name),
-          el("span", { class: "muted small" }, (f.kind === "folder" ? `${f.count} file${f.count === 1 ? "" : "s"} · ` : "") + size(f.size)),
+          typeTile(f.name, f.kind),
+          el("span", { class: "name", title: f.name }, f.name),
+          el("span", { class: "meta-line" }, (f.kind === "folder" ? `${f.count} file${f.count === 1 ? "" : "s"} · ` : "") + size(f.size)),
           el("button", {
             class: "link vis", title: "Choose which devices can see this",
             onclick: () => { openTargets.has(f.id) ? openTargets.delete(f.id) : openTargets.add(f.id); render(state); },
@@ -211,7 +223,9 @@ function render(s) {
         right = "Stopped";
       }
       box.append(el("div", { class: "t " + t.status },
-        el("div", { class: "name", title: t.name }, (t.kind === "upload" ? `⬇ From ${t.device}: ` : `⬆ To ${t.device}: `) + t.name),
+        el("div", { class: "top" },
+          el("span", { class: "name", title: t.name }, t.name),
+          el("span", { class: "who" }, (t.kind === "upload" ? "From " : "To ") + t.device)),
         el("div", { class: "bar" }, el("div", { style: `width:${pct}%` })),
         el("div", { class: "meta" }, el("span", {}, `${size(t.done)} of ${size(t.total)}`), el("span", {}, right)),
       ));
@@ -219,18 +233,20 @@ function render(s) {
   });
 
   section("received", null, [s.received, s.save_dir], () => {
-    $("save-dir").textContent = "Saved to " + s.save_dir;
+    $("save-dir").textContent = "Saved to " + s.save_dir.replace(/^\/(Users|home)\/[^/]+/, "~");
+    $("save-dir").title = s.save_dir;
     const ul = $("received");
     ul.replaceChildren();
     if (!s.received.length) ul.append(el("li", { class: "empty" }, "Files sent from devices will appear here."));
     for (const r of s.received) {
       ul.append(el("li", {},
         el("div", { class: "line" },
+          typeTile(r.name),
           el("span", { class: "name", title: r.name }, r.name),
-          el("span", { class: "muted small" }, size(r.size)),
+          el("span", { class: "meta-line" }, size(r.size)),
           el("button", { class: "link", onclick: () => act("open", { id: r.id }) }, "Open"),
           s.native_picker ? el("button", { class: "link", onclick: () => act("reveal", { id: r.id }) }, "Show in Finder") : null),
-        el("div", { class: "small muted" }, `From ${r.from} · ${ago(r.time)}`),
+        el("div", { class: "meta-line", style: "margin-left:44px" }, `From ${r.from} · ${ago(r.time)}`),
       ));
     }
   });
@@ -245,7 +261,7 @@ function render(s) {
         ? "You → " + (t.targets === null ? "all devices" : deviceNames(t.targets).join(", ") || "no devices")
         : "From " + t.from_name;
       box.append(el("div", { class: "text-item" },
-        el("div", { class: "small muted" }, `${who} · ${ago(t.time)}`),
+        el("div", { class: "meta-line" }, `${who} · ${ago(t.time)}`),
         el("div", { class: "text-body" }, t.text),
         el("div", { class: "row" },
           el("button", { class: "link", onclick: () => copy(t.text) }, "Copy"),

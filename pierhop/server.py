@@ -42,6 +42,8 @@ STATIC_FILES = {
     "host.js": "application/javascript",
     "device.js": "application/javascript",
     "favicon.svg": "image/svg+xml",
+    "Geist.woff2": "font/woff2",
+    "GeistMono.woff2": "font/woff2",
 }
 CHUNK = 1024 * 1024
 LINK_RE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")

@@ -4,98 +4,147 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="pierhop-key" content="__HOST_KEY__">
+<meta name="color-scheme" content="light dark">
 <title>PierHop</title>
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <style>
+@font-face { font-family: "Geist"; src: url("/static/Geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/static/GeistMono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+/* The website's tokens. Radii: controls 10px, panels 14px, tiles 8px. */
 :root {
-  --bg: #f4f4f5; --card: #fff; --text: #18181b; --muted: #71717a; --line: #e4e4e7;
-  --accent: #2563eb; --accent-text: #fff; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
-  --soft: #f4f4f5; --notice: #eff6ff; --notice-line: #bfdbfe;
+  --bg: #fafafa; --surface: #ffffff; --sunk: #f2f2f4; --text: #111113; --text-2: #5b5b63; --text-3: #8b8b94; --line: #e4e4e8;
+  --accent: #2563eb; --accent-hover: #1d4ed8; --accent-soft: #eef3fe; --on-accent: #ffffff;
+  --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #09090b; --card: #18181b; --text: #f4f4f5; --muted: #a1a1aa; --line: #27272a;
-    --accent: #3b82f6; --soft: #27272a; --notice: #172554; --notice-line: #1e3a8a;
+    --bg: #0b0b0d; --surface: #131316; --sunk: #1c1c21; --text: #ececef; --text-2: #a1a1aa; --text-3: #71717a; --line: #26262c;
+    --accent: #3b82f6; --accent-hover: #60a5fa; --accent-soft: #15203a; --ok: #22c55e; --warn: #f59e0b; --bad: #f87171;
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; font: 14px/1.45 system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; max-width: 1200px; margin: 0 auto; }
-h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 "Geist", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.mono, .url, .pin, .prefix { font-family: "Geist Mono", ui-monospace, Menlo, monospace; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px 18px; max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 18px; font-weight: 600; letter-spacing: -.015em; margin: 0; display: flex; align-items: center; gap: 10px; min-width: 0; }
 h1 .mark { width: 26px; height: 26px; color: var(--accent); flex: none; }
-h1 small { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 6px; }
-h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
-.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-main { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 0 24px 24px; max-width: 1200px; margin: 0 auto; }
-@media (max-width: 860px) { main { grid-template-columns: 1fr; padding: 0 16px 16px; } header { padding: 16px; } }
+h1 small { font-size: 14px; font-weight: 400; color: var(--text-2); letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+h2 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 14px; }
+.card > h2 { margin-bottom: 14px; }
+.lead { color: var(--text-2); margin: -8px 0 16px; }
+
+main { display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 0 24px 40px; max-width: 1200px; margin: 0 auto; align-items: start; }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; padding: 0 16px 32px; } header { padding: 16px; } }
 .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
-.pill { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--muted); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-.pill.on { color: var(--ok); } .pill.on::before { background: var(--ok); }
-#qr { background: #fff; border-radius: 10px; padding: 8px; width: 100%; max-width: 240px; margin: 0 auto 12px; display: block; aspect-ratio: 1; }
-#qr svg { width: 100%; height: 100%; display: block; }
-.url { font: 13px ui-monospace, Menlo, monospace; background: var(--soft); padding: 8px 10px; border-radius: 8px; word-break: break-all; }
-.pinrow { display: flex; align-items: baseline; justify-content: space-between; margin-top: 14px; }
-.pin { font: 600 28px ui-monospace, Menlo, monospace; letter-spacing: .15em; }
-.access-note { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--soft); }
-button, .btn { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text); padding: 7px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
-button:hover { border-color: var(--muted); }
-button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-button.link, a.link { border: none; background: none; padding: 2px 4px; color: var(--accent); text-decoration: none; font: inherit; cursor: pointer; }
-button.danger { color: var(--bad); }
-button.icon { border: none; background: none; color: var(--muted); padding: 2px 6px; font-size: 16px; line-height: 1; }
-button.icon:hover { color: var(--bad); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+
+.pill { font-size: 13px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.pill.on { color: var(--text); }
+.pill.on::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+
+/* Controls */
+button, .btn { font: 500 14px/1 "Geist", ui-sans-serif, system-ui, sans-serif; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background-color .15s, border-color .15s, color .15s, transform .1s; }
+button:hover { background: var(--sunk); }
+button:active { transform: translateY(1px); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+button.link, a.link { height: auto; padding: 2px 0; border: none; background: none; color: var(--accent); font: 500 13.5px/1.4 "Geist", sans-serif; text-decoration: none; cursor: pointer; }
+button.link:hover, a.link:hover { background: none; color: var(--accent-hover); }
+button.danger { color: var(--text-2); }
+button.danger:hover { color: var(--bad); }
+button.icon { height: 28px; width: 28px; padding: 0; border: none; background: none; color: var(--text-3); font-size: 18px; border-radius: 8px; }
+button.icon:hover { background: var(--sunk); color: var(--bad); }
 button:disabled { opacity: .5; cursor: default; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .grow { flex: 1; min-width: 0; }
-input[type=text], textarea, select { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+input[type=text], textarea, select { font: 14px/1.4 "Geist", sans-serif; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; transition: border-color .15s; }
+input[type=text], select { height: 36px; }
 input[type=text], textarea { width: 100%; }
-textarea { resize: vertical; min-height: 64px; }
-input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
-summary { cursor: pointer; color: var(--muted); }
-.settings { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
-.field-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-.prefix { font: 13px ui-monospace, Menlo, monospace; color: var(--muted); }
-label.check, label.radio { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
-label.radio { padding: 4px 0; }
-label.radio small { display: block; color: var(--muted); }
+input[type=text]:hover, textarea:hover, select:hover { border-color: var(--text-3); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea { resize: vertical; min-height: 72px; display: block; }
+input[type=radio], input[type=checkbox] { accent-color: var(--accent); margin: 3px 0 0; width: 15px; height: 15px; flex: none; }
+.muted { color: var(--text-2); }
+.small { font-size: 12.5px; }
 .err { color: var(--bad); font-size: 13px; }
 .err:empty { display: none; }
-.muted { color: var(--muted); }
-.small { font-size: 12px; }
-#drop { border: 2px dashed var(--line); border-radius: 12px; padding: 22px; text-align: center; color: var(--muted); margin-top: 12px; transition: .15s; }
-#drop.over { border-color: var(--accent); color: var(--accent); background: var(--soft); }
-ul.list { list-style: none; margin: 12px 0 0; padding: 0; }
-ul.list > li { padding: 9px 0; border-top: 1px solid var(--line); }
-ul.list > li:first-child { border-top: none; }
-.line { display: flex; align-items: center; gap: 10px; }
-.name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.empty { color: var(--muted); padding: 6px 0; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex: none; }
+.empty { color: var(--text-3); padding: 4px 0; }
+
+/* Connect */
+#qr { background: #fff; border-radius: 12px; padding: 10px; width: 100%; max-width: 232px; margin: 0 auto 16px; display: block; aspect-ratio: 1; border: 1px solid var(--line); }
+#qr svg { width: 100%; height: 100%; display: block; }
+.url { font-size: 12.5px; background: var(--sunk); padding: 9px 11px; border-radius: 10px; word-break: break-all; line-height: 1.4; }
+.pinrow { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.pin { font-size: 24px; font-weight: 600; letter-spacing: .14em; }
+.access-note { margin-top: 16px; padding: 10px 12px; border-radius: 10px; background: var(--sunk); color: var(--text-2); }
+.hint { color: var(--text-2); font-size: 12.5px; margin: 14px 0 0; }
+
+details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+summary { cursor: pointer; color: var(--text-2); font-weight: 500; list-style: none; display: flex; align-items: center; gap: 6px; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "›"; display: inline-block; width: 10px; transition: transform .15s; font-size: 16px; line-height: 1; }
+details[open] summary::before { transform: rotate(90deg); }
+summary:hover { color: var(--text); }
+.settings { display: flex; flex-direction: column; gap: 18px; margin-top: 16px; }
+.field-label { font-size: 12.5px; font-weight: 500; color: var(--text-2); margin-bottom: 6px; }
+.prefix { font-size: 12px; color: var(--text-3); }
+label.check, label.radio { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; padding: 5px 0; }
+label.radio small, label.check small { display: block; color: var(--text-2); font-size: 12.5px; }
+
+/* Lists */
+ul.list { list-style: none; margin: 0; padding: 0; }
+ul.list > li { padding: 10px 0; border-top: 1px solid var(--line); }
+ul.list > li:first-child { border-top: none; padding-top: 2px; }
+.line { display: flex; align-items: center; gap: 12px; }
+.name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.meta-line { font-size: 12.5px; color: var(--text-2); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex: none; }
 .dot.on { background: var(--ok); }
-input[type=text].dev-name { border: 1px solid transparent; background: none; padding: 3px 6px; margin-left: -6px; border-radius: 6px; width: auto; flex: 1; min-width: 0; font-weight: 500; }
+/* File-type tile: the extension, or a folder shape */
+.ft { width: 32px; height: 32px; border-radius: 8px; background: var(--sunk); color: var(--text-2); display: grid; place-items: center; flex: none; font: 600 9px/1 "Geist Mono", monospace; letter-spacing: .02em; text-transform: uppercase; }
+.ft.folder { background: var(--accent-soft); color: var(--accent); }
+.ft svg { width: 18px; height: 18px; }
+input[type=text].dev-name { height: 30px; border-color: transparent; background: none; padding: 0 8px; margin-left: -8px; width: auto; flex: 1; min-width: 0; font-weight: 500; }
 input[type=text].dev-name:hover { border-color: var(--line); }
-.targets { margin: 8px 0 2px; padding: 10px 12px; background: var(--soft); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
-.targets label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
-.vis { font-size: 12px; }
+.indent { margin-left: 19px; }
+.targets { margin: 10px 0 2px 44px; padding: 12px 14px; background: var(--sunk); border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.targets label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.targets input { margin: 0; }
+.vis { font-size: 12.5px; white-space: nowrap; }
+
+#drop { border: 1.5px dashed var(--line); border-radius: 12px; padding: 16px; text-align: center; color: var(--text-3); margin: 14px 0 6px; transition: border-color .15s, color .15s, background-color .15s; }
+#drop.over { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* Requests */
 .requests { display: flex; flex-direction: column; gap: 10px; }
-.request { background: var(--notice); border: 1px solid var(--notice-line); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.request .grow { min-width: 160px; }
-.bar { height: 6px; background: var(--soft); border-radius: 3px; overflow: hidden; margin-top: 6px; }
-.bar > div { height: 100%; background: var(--accent); transition: width .3s; }
-.t { padding: 10px 0; border-top: 1px solid var(--line); }
-.t:first-child { border-top: none; }
-.t .meta { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.requests:empty { display: none; }
+.request { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.request .grow { min-width: 180px; }
+
+/* Transfers */
+.t { padding: 12px 0; border-top: 1px solid var(--line); }
+.t:first-child { border-top: none; padding-top: 2px; }
+.t .top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.t .who { color: var(--text-2); font-size: 12.5px; white-space: nowrap; }
+.bar { height: 4px; background: var(--sunk); border-radius: 2px; overflow: hidden; margin: 8px 0 6px; }
+.bar > div { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+.t .meta { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .t.done .bar > div { background: var(--ok); }
 .t.stopped .bar > div { background: var(--warn); }
-.text-item { padding: 10px 0; border-top: 1px solid var(--line); }
+
+.text-item { padding: 12px 0; border-top: 1px solid var(--line); }
 .text-item:first-child { border-top: none; }
-.text-body { white-space: pre-wrap; word-break: break-word; margin: 4px 0; }
-.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: .2s; pointer-events: none; }
-.toast.show { opacity: 1; }
-[hidden] { display: none !important; }
+.text-body { white-space: pre-wrap; word-break: break-word; margin: 4px 0 6px; }
+#texts:not(:empty) { margin-top: 10px; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 8px); background: var(--text); color: var(--bg); padding: 9px 14px; border-radius: 10px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
@@ -117,7 +166,7 @@ input[type=text].dev-name:hover { border-color: var(--line); }
         <span id="pin" class="pin"></span>
       </div>
       <div class="access-note small" id="access-note" hidden></div>
-      <p class="muted small">Scan with a phone's camera, or open the link in any browser on the same Wi-Fi: phones, tablets and other computers all work.</p>
+      <p class="hint">Scan with a phone's camera, or open the link in any browser on the same Wi-Fi.</p>
       <details>
         <summary>Settings</summary>
         <div class="settings">
@@ -146,7 +195,7 @@ input[type=text].dev-name:hover { border-color: var(--line); }
             <label class="radio"><input type="radio" name="access" value="approve"><span>Devices I approve<small>You get an Allow / Deny prompt here for each new device.</small></span></label>
             <label class="radio"><input type="radio" name="access" value="open"><span>Anyone with the link<small>Only on networks you trust.</small></span></label>
           </div>
-          <label class="check"><input type="checkbox" id="remember"><span>Remember devices when PierHop restarts<small class="muted" style="display:block">Off: every device needs the PIN or your approval again each time you start PierHop.</small></span></label>
+          <label class="check"><input type="checkbox" id="remember"><span>Remember devices when PierHop restarts<small>Off: every device needs the PIN or your approval again each time you start PierHop.</small></span></label>
           <div class="row" id="new-pin-row">
             <button id="new-pin">New PIN</button>
             <span class="small muted">Devices already connected stay connected.</span>
@@ -158,24 +207,24 @@ input[type=text].dev-name:hover { border-color: var(--line); }
     <section class="card">
       <div class="card-head">
         <h2>Devices</h2>
-        <button id="remove-all" class="link danger small" hidden>Disconnect all</button>
+        <button id="remove-all" class="link danger" hidden>Disconnect all</button>
       </div>
       <ul class="list" id="devices"></ul>
-      <p class="small muted" id="devices-note" style="margin:10px 0 0" hidden>Devices need the PIN or your approval again when PierHop restarts.</p>
+      <p class="hint" id="devices-note" hidden>Devices need the PIN or your approval again when PierHop restarts.</p>
     </section>
 
     <section class="card">
       <div class="card-head">
-        <h2>Text &amp; links</h2>
-        <button id="clear-texts" class="link small" hidden>Clear</button>
+        <h2>Text and links</h2>
+        <button id="clear-texts" class="link" hidden>Clear</button>
       </div>
       <textarea id="text" placeholder="Paste a link or some text to send"></textarea>
-      <div class="row" style="margin-top:8px">
+      <div class="row" style="margin-top:10px">
         <button id="send-text" class="primary">Send</button>
         <span class="small muted">to</span>
         <select id="text-target" class="grow"></select>
       </div>
-      <div id="texts" style="margin-top:6px"></div>
+      <div id="texts"></div>
     </section>
   </div>
 
@@ -183,14 +232,16 @@ input[type=text].dev-name:hover { border-color: var(--line); }
     <div class="requests" id="requests"></div>
 
     <section class="card">
-      <h2>Available to devices</h2>
-      <p class="muted small" style="margin:-4px 0 12px">Adding files doesn't send them. They show up on devices, which download only the ones they want. Devices can open folders and pick files from them, or download a whole folder as a zip. Use the visibility setting to limit an item to certain devices.</p>
-      <div class="row">
-        <button id="pick-files" class="primary">Add files…</button>
-        <button id="pick-folder">Add folder…</button>
+      <div class="card-head">
+        <h2>Available to devices</h2>
+        <div class="row">
+          <button id="pick-folder">Add folder…</button>
+          <button id="pick-files" class="primary">Add files…</button>
+        </div>
       </div>
-      <div id="drop">Or drop files here</div>
+      <p class="lead">Adding a file doesn't send it. Devices see it here and download only what they pick.</p>
       <ul class="list" id="shared"></ul>
+      <div id="drop">Drop files here to add them</div>
     </section>
 
     <section class="card">
@@ -199,8 +250,10 @@ input[type=text].dev-name:hover { border-color: var(--line); }
     </section>
 
     <section class="card">
-      <h2>Received from devices</h2>
-      <div class="small muted" id="save-dir"></div>
+      <div class="card-head">
+        <h2>Received from devices</h2>
+        <span class="small muted" id="save-dir"></span>
+      </div>
       <ul class="list" id="received"></ul>
     </section>
   </div>
