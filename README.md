@@ -62,6 +62,14 @@ a simulated malicious server tampering with a connection, removal and ending. St
 Chrome with `--remote-debugging-port=9336`, then run
 `node --experimental-websocket web/test/pier.e2e.mjs`.
 
+### Intro video
+
+`web/video/pierhop-intro-9x16.mp4` is a 15-second vertical intro (1080 x 1920,
+silent, captions on screen) for WhatsApp Status, Reels and TikTok. It's drawn
+by `web/video/intro.html` (open it to watch the animation, or add `?t=6` to
+freeze a moment) and rendered frame by frame with `web/video/record.mjs` and
+ffmpeg; the steps are at the top of `record.mjs`.
+
 ## The PierHop app for your own network
 
 The `pierhop` Python app serves a page to every device on your Wi-Fi from a

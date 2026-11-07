@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PierHop intro</title>
+<!--
+  PierHop's 15-second intro (1080 x 1920, for WhatsApp Status, Reels, TikTok).
+  Everything is drawn from a single timeline: render(t) sets every element for
+  time t in seconds, so record.mjs can capture exact frames. Open this page in
+  a browser to watch it loop; add ?t=6 to freeze on a moment.
+-->
+<style>
+@font-face { font-family: "Geist"; src: url("../public/fonts/Geist.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Geist Mono"; src: url("../public/fonts/GeistMono.woff2") format("woff2"); font-weight: 100 900; }
+:root { --bg: #fafafa; --surface: #fff; --sunk: #f2f2f4; --text: #111113; --text-2: #5b5b63; --line: #e4e4e8; --accent: #2563eb; --soft: #eef3fe; --ok: #16a34a; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #e9e9ec; overflow: hidden; }
+body { display: grid; place-items: center; font-family: "Geist", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+#frame { width: 1080px; height: 1920px; position: relative; transform-origin: center; }
+body.record { background: var(--bg); display: block; }
+body.record #frame { transform: none !important; }
+#stage { position: absolute; inset: 0; background: var(--bg); overflow: hidden; color: var(--text); }
+.abs { position: absolute; }
+#dark { inset: 0; background: #0d1117; opacity: 0; }
+
+/* Captions */
+.cap { left: 70px; right: 70px; text-align: center; font-weight: 650; letter-spacing: -.04em; line-height: 1.04; opacity: 0; will-change: transform, opacity; }
+.cap.top { top: 250px; font-size: 84px; }
+.cap.hook { top: 760px; font-size: 118px; }
+.cap .soft { color: var(--text-2); }
+
+/* Phones */
+.phone { top: 620px; width: 420px; height: 860px; border-radius: 64px; background: #141416; padding: 14px; box-shadow: 0 2px 4px rgba(17,24,39,.08), 0 40px 80px -30px rgba(17,24,39,.35); opacity: 0; }
+#pA { left: 90px; } #pB { left: 570px; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 50px; background: var(--bg); overflow: hidden; }
+.notch { position: absolute; top: 14px; left: 50%; width: 110px; height: 30px; margin-left: -55px; background: #141416; border-radius: 16px; z-index: 3; }
+.bar { position: absolute; top: 62px; left: 26px; right: 26px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 25px; letter-spacing: -.02em; }
+.bar svg { width: 34px; height: 34px; color: var(--accent); }
+.bar .cnt { margin-left: auto; font-weight: 400; font-size: 19px; color: var(--text-2); letter-spacing: 0; opacity: 0; }
+.view { position: absolute; left: 0; right: 0; top: 120px; bottom: 0; opacity: 0; }
+.label { top: 1500px; width: 420px; text-align: center; font-size: 30px; color: var(--text-2); opacity: 0; }
+.label b { color: var(--text); font-weight: 600; }
+#lA { left: 90px; } #lB { left: 570px; }
+
+.big-btn { position: absolute; left: 26px; right: 26px; height: 92px; border-radius: 20px; background: var(--accent); color: #fff; font-weight: 600; font-size: 30px; display: grid; place-items: center; }
+.hint { position: absolute; left: 26px; right: 26px; text-align: center; font-size: 22px; color: var(--text-2); }
+.title { position: absolute; left: 26px; right: 26px; font-weight: 650; font-size: 40px; letter-spacing: -.035em; line-height: 1.08; }
+.small { font-size: 20px; color: var(--text-2); }
+.code { position: absolute; left: 26px; right: 18px; font: 600 42px "Geist Mono", monospace; letter-spacing: 0; white-space: nowrap; }
+.input { position: absolute; left: 26px; right: 26px; height: 86px; border-radius: 18px; background: var(--surface); border: 2px solid var(--line); font: 600 38px "Geist Mono", monospace; display: flex; align-items: center; padding: 0 22px; }
+.input.focus { border-color: var(--accent); }
+.caret { display: inline-block; width: 3px; height: 40px; background: var(--accent); margin-left: 3px; }
+.btn2 { position: absolute; left: 26px; right: 26px; height: 80px; border-radius: 18px; background: var(--sunk); font-weight: 600; font-size: 28px; display: grid; place-items: center; }
+.card { position: absolute; left: 20px; right: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 26px; padding: 22px; }
+.req { background: var(--soft); border-color: #c9d8fb; }
+.req .who { font-size: 25px; margin-bottom: 16px; } .req .who b { font-weight: 650; }
+.req .row { display: flex; gap: 12px; }
+.req .row div { flex: 1; height: 64px; border-radius: 14px; display: grid; place-items: center; font-weight: 600; font-size: 23px; background: #fff; border: 1px solid var(--line); }
+.req .row .go { background: var(--accent); border-color: var(--accent); color: #fff; }
+.grp { font-size: 19px; font-weight: 600; color: var(--text-2); margin-bottom: 12px; }
+.file { display: flex; align-items: center; gap: 14px; }
+.ft { width: 64px; height: 64px; border-radius: 14px; background: var(--sunk); color: var(--text-2); display: grid; place-items: center; font: 600 16px "Geist Mono", monospace; flex: none; }
+.file .nm { font-weight: 600; font-size: 22px; letter-spacing: -.01em; }
+.file .mt { font-size: 18px; color: var(--text-2); margin-top: 2px; }
+.prog { height: 7px; border-radius: 4px; background: var(--sunk); margin-top: 10px; overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--accent); width: 0; border-radius: 4px; }
+.prog.ok i { background: var(--ok); }
+.spin { position: absolute; left: 50%; width: 56px; height: 56px; margin-left: -28px; border-radius: 50%; border: 6px solid var(--line); border-top-color: var(--accent); }
+
+/* A file hopping between phones */
+.hop { width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 26px; background: var(--accent); color: #fff; display: grid; place-items: center; font: 700 26px "Geist Mono", monospace; box-shadow: 0 24px 50px -16px rgba(37,99,235,.55); opacity: 0; z-index: 5; }
+#trail { inset: 0; opacity: 0; z-index: 4; }
+
+#tap { width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; background: rgba(17,17,19,.22); opacity: 0; z-index: 6; }
+
+/* Privacy */
+#lock { left: 50%; top: 640px; width: 300px; margin-left: -150px; opacity: 0; }
+#lock svg { width: 300px; height: 330px; display: block; }
+.dcap { left: 60px; right: 60px; text-align: center; color: #fff; font-weight: 650; font-size: 92px; letter-spacing: -.04em; line-height: 1.05; opacity: 0; }
+.dcap.dim { color: #a9b1bd; }
+
+/* End card */
+#end { inset: 0; opacity: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 70px; }
+#end .mark { width: 230px; height: 230px; color: var(--accent); }
+#end .word { font-size: 124px; font-weight: 650; letter-spacing: -.045em; margin: 18px 0 30px; }
+#end .tag { font-size: 58px; font-weight: 600; letter-spacing: -.035em; line-height: 1.12; max-width: 900px; }
+#end .cta { margin-top: 70px; background: var(--accent); color: #fff; font-weight: 650; font-size: 46px; padding: 34px 64px; border-radius: 26px; }
+#end .url { margin-top: 40px; font: 500 34px "Geist Mono", monospace; color: var(--text); }
+#end .free { margin-top: 14px; font-size: 32px; color: var(--text-2); }
+#end > * { opacity: 0; }
+</style>
+</head>
+<body>
+<div id="frame"><div id="stage">
+  <div id="dark" class="abs"></div>
+
+  <div class="cap hook abs" id="h1">Got a file to send?</div>
+  <div class="cap hook abs" id="h2">Do they have <span class="soft">a browser?</span></div>
+  <div class="cap top abs" id="c1">Create a pier.</div>
+  <div class="cap top abs" id="c2">Anyone, anywhere, <span class="soft">joins with the code.</span></div>
+  <div class="cap top abs" id="c3">Swap files. <span class="soft">Both ways. Any device.</span></div>
+
+  <!-- Host phone -->
+  <div class="phone abs" id="pA"><div class="screen">
+    <div class="notch"></div>
+    <div class="bar"><svg viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>PierHop<span class="cnt" id="aCnt">2 on this pier</span></div>
+    <div class="view" id="aHome">
+      <div class="title" style="top:150px">Send files to anyone with a browser.</div>
+      <div class="big-btn" id="aCreate" style="top:330px">Create a pier</div>
+      <div class="hint" style="top:448px">Free. No app.</div>
+    </div>
+    <div class="view" id="aRoom">
+      <div class="small" style="position:absolute;left:26px;top:20px">Your pier code</div>
+      <div class="code" id="aCode" style="top:52px"></div>
+      <div class="card req" id="aReq" style="top:150px">
+        <div class="who"><b>Arjun</b> wants to join<div class="small">iPhone</div></div>
+        <div class="row"><div class="go" id="aLetIn">Let in</div><div>Deny</div></div>
+      </div>
+      <div class="card" id="aMine" style="top:150px">
+        <div class="grp">You're sharing</div>
+        <div class="file"><div class="ft" id="aTile">ZIP</div><div><div class="nm">Wedding photos.zip</div><div class="mt" id="aMineMt">48 MB</div></div></div>
+      </div>
+      <div class="card" id="aGot" style="top:356px">
+        <div class="grp">Arjun is sharing</div>
+        <div class="file"><div class="ft">PDF</div><div style="flex:1"><div class="nm">Invoice.pdf</div><div class="mt" id="aGotMt">2.1 MB</div><div class="prog" id="aGotBar"><i></i></div></div></div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- Guest phone -->
+  <div class="phone abs" id="pB"><div class="screen">
+    <div class="notch"></div>
+    <div class="bar"><svg viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>PierHop<span class="cnt" id="bCnt">2 on this pier</span></div>
+    <div class="view" id="bHome">
+      <div class="title" style="top:150px">Got a code?</div>
+      <div class="input" id="bInput" style="top:240px"><span id="bTyped"></span><span class="caret" id="bCaret"></span></div>
+      <div class="btn2" id="bJoin" style="top:350px">Join</div>
+    </div>
+    <div class="view" id="bWait">
+      <div class="spin" id="bSpin" style="top:230px"></div>
+      <div class="title" style="top:320px;text-align:center">Asking to join</div>
+      <div class="hint" style="top:380px">Ada will let you in.</div>
+    </div>
+    <div class="view" id="bRoom">
+      <div class="card" id="bGot" style="top:30px">
+        <div class="grp">Ada is sharing</div>
+        <div class="file"><div class="ft">ZIP</div><div style="flex:1"><div class="nm">Wedding photos.zip</div><div class="mt" id="bGotMt">48 MB</div><div class="prog" id="bGotBar"><i></i></div></div></div>
+      </div>
+      <div class="card" id="bMine" style="top:236px">
+        <div class="grp">You're sharing</div>
+        <div class="file"><div class="ft" id="bTile">PDF</div><div><div class="nm">Invoice.pdf</div><div class="mt">2.1 MB</div></div></div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="label abs" id="lA"><b>Ada</b> · Lagos</div>
+  <div class="label abs" id="lB"><b>Arjun</b> · Melbourne</div>
+
+  <svg id="trail" class="abs" viewBox="0 0 1080 1920"><path id="trailPath" fill="none" stroke="#2563eb" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 20" opacity=".55"/></svg>
+  <div class="hop abs" id="hop1">ZIP</div>
+  <div class="hop abs" id="hop2">PDF</div>
+  <div id="tap" class="abs"></div>
+
+  <!-- Privacy -->
+  <div id="lock" class="abs"><svg viewBox="0 0 300 330"><path d="M80 150V100a70 70 0 0 1 140 0v50" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round"/><rect x="30" y="140" width="240" height="180" rx="38" fill="#2563eb"/><circle cx="150" cy="218" r="20" fill="#fff"/><rect x="141" y="226" width="18" height="46" rx="9" fill="#fff"/></svg></div>
+  <div class="dcap abs" id="d1" style="top:1080px">Nothing uploaded.</div>
+  <div class="dcap abs" id="d2" style="top:1190px">Nobody sees it.</div>
+  <div class="dcap dim abs" id="d3" style="top:1300px">Not even us.</div>
+
+  <!-- End card -->
+  <div id="end" class="abs">
+    <svg class="mark" id="eMark" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-linecap="round"><path id="eArc" d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/><path id="eWave" d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></g><circle id="eDotA" cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle id="eDotB" cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>
+    <div class="word" id="eWord">PierHop</div>
+    <div class="tag" id="eTag">If they have a browser, they can get your files.</div>
+    <div class="cta" id="eCta">Create a pier</div>
+    <div class="url" id="eUrl">pierhop.zignahq.workers.dev</div>
+    <div class="free" id="eFree">Free. No app. End-to-end encrypted.</div>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+const DURATION = 15;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+function put(el, opacity, y = 0, scale = 1, x = 0) {
+  const e = typeof el === "string" ? $(el) : el;
+  e.style.opacity = opacity;
+  e.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+}
+
+// Fades in over 0.35 s with a short rise, holds, fades out over 0.25 s.
+function caption(id, t, a, b, rise = 36) {
+  const i = easeOut(prog(t, a, a + 0.35));
+  const o = 1 - prog(t, b - 0.25, b);
+  put(id, i * o, (1 - i) * rise - (1 - o) * 20);
+}
+
+function tap(t, at, x, y) {
+  const p = prog(t, at, at + 0.45);
+  const tapEl = $("tap");
+  if (p <= 0 || p >= 1) return false;
+  tapEl.style.left = x + "px";
+  tapEl.style.top = y + "px";
+  tapEl.style.opacity = (1 - p) * 0.9;
+  tapEl.style.transform = `scale(${0.55 + p * 0.9})`;
+  return true;
+}
+
+// Quadratic arc from (x0, y0) to (x2, y2) through a high control point: the "hop".
+function arcPoint(x0, y0, x2, y2, cy, p) {
+  const cx = (x0 + x2) / 2;
+  const q = 1 - p;
+  return [q * q * x0 + 2 * q * p * cx + p * p * x2, q * q * y0 + 2 * q * p * cy + p * p * y2];
+}
+
+function hop(id, t, a, b, from, to) {
+  const p = easeInOut(prog(t, a, b));
+  const visible = t > a - 0.15 && t < b + 0.2;
+  const [x, y] = arcPoint(from[0], from[1], to[0], to[1], 140, p);
+  const el = $(id);
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  const lift = Math.sin(Math.PI * p);
+  el.style.opacity = visible ? Math.min(1, prog(t, a - 0.15, a) * 1) * (1 - prog(t, b, b + 0.2)) : 0;
+  el.style.transform = `scale(${0.55 + 0.45 * lift + (p === 0 ? 0 : 0)}) rotate(${(p - 0.5) * 18}deg)`;
+  // Dotted trail behind the hopping file
+  if (t > a && t < b + 0.35) {
+    const pts = [];
+    for (let i = 0; i <= 24; i++) pts.push(arcPoint(from[0], from[1], to[0], to[1], 140, (i / 24) * p));
+    $("trailPath").setAttribute("d", "M" + pts.map((q) => q.join(" ")).join(" L"));
+    $("trail").style.opacity = 1 - prog(t, b, b + 0.35);
+  }
+}
+
+function bar(id, p, ok) {
+  const b = $(id);
+  b.querySelector("i").style.width = (p * 100).toFixed(2) + "%";
+  b.classList.toggle("ok", !!ok);
+}
+
+const CODE = "xri-ezc-edf";
+// Where things sit on the 1080 x 1920 stage.
+const A_TILE = [90 + 14 + 20 + 22 + 32, 620 + 14 + 120 + 150 + 22 + 30 + 32];
+const B_TILE_GOT = [570 + 14 + 20 + 22 + 32, 620 + 14 + 120 + 30 + 22 + 30 + 32];
+const B_TILE_MINE = [570 + 14 + 20 + 22 + 32, 620 + 14 + 120 + 236 + 22 + 30 + 32];
+const A_TILE_GOT = [90 + 14 + 20 + 22 + 32, 620 + 14 + 120 + 356 + 22 + 30 + 32];
+
+function render(t) {
+  // --- hook ---
+  caption("h1", t, 0.05, 1.15, 50);
+  caption("h2", t, 1.15, 2.25, 50);
+
+  // --- phones in / out ---
+  const inP = easeOut(prog(t, 2.15, 2.75));
+  const outP = easeInOut(prog(t, 10.75, 11.25));
+  const phoneO = inP * (1 - outP);
+  put("pA", phoneO, (1 - inP) * 160 + outP * 60, 1 - outP * 0.08);
+  put("pB", phoneO, (1 - inP) * 220 + outP * 60, 1 - outP * 0.08);
+  put("lA", phoneO, (1 - inP) * 160);
+  put("lB", phoneO, (1 - inP) * 220);
+
+  caption("c1", t, 2.3, 4.7);
+  caption("c2", t, 4.7, 7.3);
+  caption("c3", t, 7.3, 10.8);
+
+  // --- host phone: create, code, request, files ---
+  const created = t >= 3.0;
+  put("aHome", created ? 1 - prog(t, 3.0, 3.2) : 1);
+  $("aCreate").style.transform = `scale(${t > 2.85 && t < 3.05 ? 0.96 : 1})`;
+  put("aRoom", prog(t, 3.0, 3.25));
+  const typed = Math.floor(prog(t, 3.25, 4.05) * CODE.length + 0.001);
+  $("aCode").textContent = CODE.slice(0, typed);
+
+  const reqIn = easeOut(prog(t, 6.0, 6.3));
+  const reqOut = prog(t, 6.75, 6.95);
+  put("aReq", reqIn * (1 - reqOut), (1 - reqIn) * -20, 1 - reqOut * 0.05);
+  const mineIn = easeOut(prog(t, 6.95, 7.25));
+  put("aMine", mineIn, (1 - mineIn) * 20);
+  $("aLetIn").style.transform = `scale(${t > 6.6 && t < 6.8 ? 0.95 : 1})`;
+  $("aCnt").style.opacity = prog(t, 6.85, 7.1);
+  $("bCnt").style.opacity = prog(t, 6.85, 7.1);
+
+  // Invoice coming back to the host
+  const aGotIn = easeOut(prog(t, 9.25, 9.5));
+  put("aGot", aGotIn, (1 - aGotIn) * 20);
+  const aGotP = easeInOut(prog(t, 9.95, 10.55));
+  bar("aGotBar", aGotP, aGotP >= 1);
+  $("aGotMt").textContent = aGotP >= 1 ? "2.1 MB · downloaded" : aGotP > 0 ? `${Math.round(aGotP * 100)}%` : "2.1 MB";
+
+  // --- guest phone: type the code, knock, get in, files ---
+  const typedB = Math.floor(prog(t, 4.8, 5.6) * CODE.length + 0.001);
+  $("bTyped").textContent = CODE.slice(0, typedB);
+  $("bInput").classList.toggle("focus", t > 4.7);
+  $("bCaret").style.opacity = t > 4.7 && t < 5.9 && Math.floor(t * 3) % 2 === 0 ? 1 : t > 4.7 && t < 5.9 ? 0.3 : 0;
+  $("bJoin").style.background = typedB === CODE.length ? "#2563eb" : "";
+  $("bJoin").style.color = typedB === CODE.length ? "#fff" : "";
+  $("bJoin").style.transform = `scale(${t > 5.75 && t < 5.95 ? 0.96 : 1})`;
+  put("bHome", 1 - prog(t, 5.9, 6.1));
+  put("bWait", prog(t, 5.95, 6.15) * (1 - prog(t, 6.8, 6.95)));
+  $("bSpin").style.transform = `rotate(${t * 360}deg)`;
+  put("bRoom", prog(t, 6.85, 7.1));
+  const bGotIn = easeOut(prog(t, 7.1, 7.35));
+  put("bGot", bGotIn, (1 - bGotIn) * 20);
+  const bGotP = easeInOut(prog(t, 8.25, 9.05));
+  bar("bGotBar", bGotP, bGotP >= 1);
+  $("bGotMt").textContent = bGotP >= 1 ? "48 MB · downloaded" : bGotP > 0 ? `${Math.round(bGotP * 100)}%` : "48 MB";
+  const bMineIn = easeOut(prog(t, 8.95, 9.2));
+  put("bMine", bMineIn, (1 - bMineIn) * 20);
+
+  // --- the hops ---
+  hop("hop1", t, 7.5, 8.3, A_TILE, B_TILE_GOT);
+  hop("hop2", t, 9.25, 10.0, B_TILE_MINE, A_TILE_GOT);
+  if (!(t > 7.35 && t < 8.65) && !(t > 9.1 && t < 10.35)) $("trail").style.opacity = 0;
+
+  // --- taps ---
+  $("tap").style.opacity = 0;
+  tap(t, 2.85, 90 + 14 + 196, 620 + 14 + 120 + 376) ||
+    tap(t, 5.72, 570 + 14 + 196, 620 + 14 + 120 + 390) ||
+    tap(t, 6.55, 90 + 14 + 20 + 22 + 85, 620 + 14 + 120 + 150 + 22 + 100 + 32);
+
+  // --- privacy ---
+  const darkP = easeInOut(prog(t, 10.9, 11.3)) * (1 - easeInOut(prog(t, 12.7, 13.05)));
+  $("dark").style.opacity = darkP;
+  const lockIn = easeOut(prog(t, 11.1, 11.5));
+  put("lock", lockIn * (1 - prog(t, 12.6, 12.9)), (1 - lockIn) * 40, 0.85 + 0.15 * lockIn);
+  caption("d1", t, 11.3, 12.9, 30);
+  caption("d2", t, 11.65, 12.9, 30);
+  caption("d3", t, 12.0, 12.9, 30);
+
+  // --- end card ---
+  const endIn = prog(t, 12.95, 13.15);
+  $("end").style.opacity = endIn;
+  const arcP = easeOut(prog(t, 13.05, 13.6));
+  $("eArc").setAttribute("stroke-dashoffset", 1 - arcP);
+  $("eWave").setAttribute("stroke-dashoffset", 1 - easeOut(prog(t, 13.15, 13.75)));
+  put("eMark", easeOut(prog(t, 12.95, 13.2)), 0, 0.9 + 0.1 * easeOut(prog(t, 12.95, 13.3)));
+  const step = (id, a) => { const p = easeOut(prog(t, a, a + 0.35)); put(id, p, (1 - p) * 26); };
+  step("eWord", 13.3);
+  step("eTag", 13.5);
+  step("eCta", 13.75);
+  step("eUrl", 13.95);
+  step("eFree", 14.1);
+}
+window.render = render;
+
+// Preview: loop in a browser, or freeze with ?t=6. record.mjs adds ?record.
+const params = new URLSearchParams(location.search);
+function fit() {
+  if (document.body.classList.contains("record")) return;
+  const s = Math.min(innerWidth / 1080, innerHeight / 1920);
+  $("frame").style.transform = `scale(${s})`;
+}
+if (params.has("record")) {
+  document.body.classList.add("record");
+  render(0);
+} else if (params.has("t")) {
+  fit();
+  render(Number(params.get("t")));
+} else {
+  fit();
+  const start = performance.now();
+  (function loop(now) { render(((now - start) / 1000) % (DURATION + 1)); requestAnimationFrame(loop); })(start);
+}
+addEventListener("resize", fit);
+</script>
+</body>
+</html>
