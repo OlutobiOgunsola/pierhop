@@ -9,8 +9,10 @@ computer, anywhere in the world. No app, no account, nothing uploaded.
 
 ## How piers work
 
-1. **Create a pier.** You get a link like `pierhop.com/kqv-dhmw-tpx`.
-2. **Let people in.** Anyone who opens the link types their name and knocks.
+1. **Create a pier.** You get a short code like `kqv-dhm-tpx`, and a link that's
+   just the site plus that code, easy to read out or type on a phone.
+2. **Let people in.** Anyone who opens the link (or types the code on the home
+   page) types their name and knocks.
    You choose **Let in** or **Deny**.
 3. **Swap files.** Everyone on the pier can share files and download what
    others share, in both directions.
@@ -20,10 +22,14 @@ keeps the guest list and helps browsers find each other; it never sees a file
 and stores nothing. The one catch: whoever is sharing has to stay online until
 the others have the file. When the host ends the pier, it's gone.
 
-**Private, even from us.** Each pier has a random 256-bit key in the link's
-fragment (after the `#`), which browsers never send to a server. Browsers sign
-their DTLS fingerprints with an HMAC derived from it, so a server that tried to
-intercept a connection would be caught and refused. On top of DTLS, every chunk
+**Private, even from us.** The pier code is the key. Pier links are served the
+home page by Cloudflare's static asset layer without running the Worker, and
+the page hands the code to the pier app in the URL fragment, which browsers
+never send to a server. The app stretches the code with PBKDF2-SHA256 (300,000
+rounds) into an HKDF key; the server only ever sees a room id derived from it,
+a one-way fingerprint that would take years per GPU to turn back into a code.
+Browsers sign their DTLS fingerprints with an HMAC derived from the same key,
+so a server that tried to intercept a connection would be caught and refused. On top of DTLS, every chunk
 is encrypted with AES-256-GCM under a fresh per-transfer key (HKDF from the
 pier key and a random salt). File names and lists only travel inside those
 connections.

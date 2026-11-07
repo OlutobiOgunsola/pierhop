@@ -3,12 +3,14 @@
 // everyone on it can share files with everyone else.
 //
 // Privacy: files go browser to browser over WebRTC, which encrypts every
-// connection. The pier's secret key lives in the link after the "#", which
-// browsers never send to any server. With it, each browser signs its half of
+// connection. The short pier code (kqv-dhm-tpx) is the key. It reaches this
+// page in the "#", which browsers never send to any server, and is stretched
+// here (PBKDF2, 300,000 rounds) into the keys: one signs each browser's half of
 // the connection setup, so not even PierHop's own server could step into the
 // middle unnoticed, and every file chunk is encrypted again with AES-256-GCM
-// under a fresh key per transfer. The server only ever sees knocks, names and
-// sealed connection setup; never files, file names or the key.
+// under a fresh key per transfer. The server addresses the pier by a room id,
+// a one-way fingerprint from the same stretch, and so never sees the code,
+// the keys, files or file names.
 //
 // Resuming: downloads are written to the browser's private storage as they
 // arrive, with a confirmed position saved every few megabytes. If anything
@@ -16,7 +18,9 @@
 // from the last confirmed byte once both people are back.
 
 const $ = (id) => document.getElementById(id);
-const CODE_RE = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
+const LETTERS = "abcdefghijkmnpqrstuvwxyz"; // no l or o: easy to read out and type
+const CODE_RE = /^[a-z]{3}-[a-z]{3}-[a-z]{3}$/;
+const STRETCH = 300000; // PBKDF2 rounds: makes guessing a code from its fingerprint take years
 const ICE_SERVERS = [{ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] }];
 const HIGH_WATER = 4 * 1024 * 1024; // pause sending when this much is queued
 const LOW_WATER = 1024 * 1024;
@@ -93,11 +97,21 @@ function randomId(n = 12) {
   return [...crypto.getRandomValues(new Uint8Array(n))].map((b) => (b % 36).toString(36)).join("");
 }
 
+// 9 letters from 24: about 2.6 trillion codes. 240 is a multiple of 24, so
+// rejecting bytes above it keeps every letter equally likely.
 function newCode() {
-  const letters = "abcdefghijkmnopqrstuvwxyz";
-  const bytes = crypto.getRandomValues(new Uint8Array(10));
-  const s = [...bytes].map((b) => letters[b % letters.length]).join("");
-  return `${s.slice(0, 3)}-${s.slice(3, 7)}-${s.slice(7)}`;
+  const picked = [];
+  while (picked.length < 9) {
+    for (const b of crypto.getRandomValues(new Uint8Array(16))) if (b < 240 && picked.length < 9) picked.push(LETTERS[b % 24]);
+  }
+  const s = picked.join("");
+  return `${s.slice(0, 3)}-${s.slice(3, 6)}-${s.slice(6)}`;
+}
+
+// Accepts what people actually type: capitals, spaces, missing dashes.
+function normalizeCode(text) {
+  const s = String(text || "").toLowerCase().replace(/[^a-z]/g, "");
+  return s.length === 9 ? `${s.slice(0, 3)}-${s.slice(3, 6)}-${s.slice(6)}` : null;
 }
 
 // A stable name for a file, so the same file shared again (after a refresh)
@@ -121,19 +135,24 @@ function recall(key) {
   try { return sessionStorage.getItem(key); } catch { return null; }
 }
 
-// --- the pier's secret key ---------------------------------------------------------
+// --- the pier's keys, from its code ------------------------------------------------
 
 const enc = (s) => new TextEncoder().encode(s);
 const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const unb64 = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
 
-let secret = null; // 32 random bytes, only ever in the link's "#" part and this page
-let baseKey = null; // HKDF key derived from it
+let roomId = null; // what the server knows the pier by: a one-way fingerprint of the code
+let baseKey = null; // HKDF key stretched from the code
 let signKey = null; // HMAC key for signing connection setup
 
-async function useSecret(raw) {
-  secret = raw;
-  baseKey = await crypto.subtle.importKey("raw", raw, "HKDF", false, ["deriveKey"]);
+async function useCode(pierCode) {
+  const password = await crypto.subtle.importKey("raw", enc(pierCode), "PBKDF2", false, ["deriveBits"]);
+  const stretched = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt: enc("pierhop pier v2"), iterations: STRETCH }, password, 256);
+  baseKey = await crypto.subtle.importKey("raw", stretched, "HKDF", false, ["deriveKey", "deriveBits"]);
+  const room = await crypto.subtle.deriveBits(
+    { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: enc("pierhop room id") }, baseKey, 128);
+  roomId = [...new Uint8Array(room)].map((b) => b.toString(16).padStart(2, "0")).join("");
   signKey = await crypto.subtle.deriveKey(
     { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: enc("pierhop signal v1") },
     baseKey, { name: "HMAC", hash: "SHA-256", length: 256 }, false, ["sign", "verify"]);
@@ -174,7 +193,7 @@ function nonce(offset) {
 }
 
 function pierLink() {
-  return `${location.origin}/${code}#${b64(secret)}`;
+  return `${location.origin}/${code}`;
 }
 
 // --- where downloads are kept while they arrive ----------------------------------
@@ -332,7 +351,7 @@ function connect(params) {
   const q = new URLSearchParams(params);
   const proto = location.protocol === "https:" ? "wss" : "ws";
   attempts++;
-  ws = new WebSocket(`${proto}://${location.host}/api/piers/${code}/ws?${q}`);
+  ws = new WebSocket(`${proto}://${location.host}/api/piers/${roomId}/ws?${q}`);
   ws.onopen = () => { $("net").hidden = true; };
   ws.onmessage = (e) => { greeted = true; attempts = 0; onDesk(JSON.parse(e.data)); };
   ws.onclose = () => {
@@ -373,7 +392,7 @@ function onDesk(m) {
       break;
     case "no-pier":
       forgetPier();
-      message("This pier is closed", "Piers close when the person who made them leaves. Ask them for a new link.");
+      message("No pier with that code is open", "Check the code. Piers close when the person who made them leaves, so you may need a new one.");
       break;
     case "error":
       if (m.reason === "taken") startPier(); // vanishingly rare: pick another code
@@ -884,8 +903,9 @@ function restoreDownloads() {
 
 function enterRoom() {
   show("s-room");
-  history.replaceState(null, "", `/${code}#${b64(secret)}`);
-  $("invite-link").textContent = `${location.host}/${code}`;
+  history.replaceState(null, "", `/pier#${code}`);
+  $("pier-code").textContent = code;
+  $("invite-link").replaceChildren(`${location.host}/`, document.createElement("wbr"), code); // wraps after the slash, never inside the code
   $("share").hidden = !navigator.share;
   $("local-note").hidden = !["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
   const qr = qrcode(0, "M");
@@ -1028,10 +1048,9 @@ function renderRoom() {
 
 async function startPier() {
   code = newCode();
-  const raw = crypto.getRandomValues(new Uint8Array(32));
-  await useSecret(raw);
-  store("pierhop:secret:" + code, b64(raw));
-  history.replaceState(null, "", `/${code}#${b64(raw)}`);
+  $("name-go").textContent = "Securing your pier…";
+  await useCode(code);
+  history.replaceState(null, "", `/pier#${code}`);
   connect({ create: 1, name: me.name, device: deviceLabel() });
 }
 
@@ -1121,23 +1140,20 @@ addEventListener("hashchange", () => location.reload());
   if (!(crypto && crypto.subtle)) {
     return message("PierHop needs a secure connection", "Open this page using its https:// address.");
   }
-  const path = location.pathname.replace(/\/$/, "").slice(1);
-  if (path === "new") {
+  // Pier links (/kqv-dhm-tpx) are handed here as /pier#kqv-dhm-tpx by the
+  // home page, so the code stays out of every request. No code: create one.
+  if (!location.hash.slice(1)) {
     show("s-name");
     $("name").focus();
     return;
   }
-  if (!CODE_RE.test(path)) return message("Link not found", "Check the link, or create your own pier.");
-  code = path;
-  const fromLink = location.hash.slice(1);
-  const key = fromLink || recall("pierhop:secret:" + code);
-  let raw = null;
-  try { raw = key ? unb64(key) : null; } catch {}
-  if (!raw || raw.length !== 32) {
-    return message("This link is incomplete", "Ask for the full pier link. The part after the # is the key that keeps your files private.");
+  code = normalizeCode(decodeURIComponent(location.hash.slice(1)));
+  if (!code || !CODE_RE.test(code) || [...code.replace(/-/g, "")].some((c) => !LETTERS.includes(c))) {
+    return message("That code doesn't look right", "Pier codes are nine letters, like kqv-dhm-tpx. Check it and try again.");
   }
-  await useSecret(raw);
-  store("pierhop:secret:" + code, b64(raw));
+  $("connecting").hidden = false;
+  await useCode(code);
+  $("connecting").hidden = true;
   tidyStorage(code).catch(() => {});
   restoreDownloads();
 

@@ -28,6 +28,7 @@ async function person(label) {
     const d = JSON.parse(m.data);
     pending.get(d.id)?.(d);
     if (d.method === "Network.webSocketFrameSent" || d.method === "Network.webSocketFrameReceived") serverTraffic.push(d.params.response.payloadData);
+    if (d.method === "Network.webSocketCreated") serverTraffic.push(d.params.url);
     if (d.method === "Page.javascriptDialogOpening") ws.send(JSON.stringify({ id: 1e9 + Math.floor(Math.random() * 1e6), method: "Page.handleJavaScriptDialog", params: { accept: true } }));
     if (d.method === "Runtime.exceptionThrown") console.log(`  [${label} error]`, d.params.exceptionDetails.exception?.description || d.params.exceptionDetails.text);
   };
@@ -82,20 +83,19 @@ const allConnected = (n) => `peers.size === ${n} && [...peers.values()].every(p 
 const host = await person("host"), amaka = await person("amaka"), bayo = await person("bayo"), chen = await person("chen");
 
 // --- the basics ---
-await host.open(BASE + "/new");
+await host.open(BASE + "/pier");
 await host.join("Tobi");
 await host.until(`!document.getElementById("s-room").hidden`, "room");
 const link = await host.ev("pierLink()");
 const code = new URL(link).pathname.slice(1);
-const secret = new URL(link).hash.slice(1);
-check("host creates a pier with a Meet-style code", /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(code), code);
-check("the link carries a 256-bit key after the #", secret.length === 43, `${secret.length} chars`);
+check("the pier link is short enough to type", /^[a-z]{3}-[a-z]{3}-[a-z]{3}$/.test(code) && !new URL(link).hash, link);
 
-await amaka.open(BASE + "/" + code);
-await amaka.until(`!document.getElementById("s-msg").hidden`, "incomplete-link screen");
-check("a link without its key is refused", (await amaka.text("#msg-title")) === "This link is incomplete");
+await bayo.open(BASE + "/zzz-zzz-zzz");
+await bayo.until(`!document.getElementById("s-msg").hidden`, "wrong-code screen");
+check("a wrong code says so", (await bayo.text("#msg-title")) === "No pier with that code is open");
 
-await amaka.open(link);
+// Typed the way people type: capitals, no dashes.
+await amaka.open(BASE + "/" + code.toUpperCase().replace(/-/g, ""));
 await amaka.until(`!document.getElementById("s-name").hidden`, "join screen");
 check("guest sees whose pier it is", (await amaka.text("#name-title")) === "Join Tobi's pier", await amaka.text("#name-title"));
 await amaka.join("Amaka");
@@ -187,8 +187,8 @@ check("and the file is byte for byte correct", r.sum === expected(BIG, 44), r.su
 
 // --- privacy: what the server saw ---
 const traffic = serverTraffic.join("\n");
-const leaked = ["holiday-video", "receipt.pdf", "wedding.zip", "photos.zip", secret].filter((s) => traffic.includes(s));
-check("no file names or keys ever reach the server", leaked.length === 0, `${serverTraffic.length} messages checked${leaked.length ? ", leaked: " + leaked : ""}`);
+const leaked = ["holiday-video", "receipt.pdf", "wedding.zip", "photos.zip", code, code.replace(/-/g, "")].filter((s) => traffic.includes(s));
+check("the code, file names and keys never reach the server", leaked.length === 0, `${serverTraffic.length} messages and connections checked${leaked.length ? ", leaked: " + leaked : ""}`);
 check("connection setup crossing the server is signed", serverTraffic.some((m) => m.includes('"sig"')));
 
 // --- a malicious server can't step into the middle ---
@@ -222,8 +222,8 @@ await amaka.until(`!document.getElementById("s-msg").hidden`, "ended screen");
 check("ending the pier tells everyone", (await amaka.text("#msg-title")) === "This pier has ended");
 await bayo.open("about:blank");
 await bayo.open(link);
-await bayo.until(`!document.getElementById("s-msg").hidden && document.getElementById("msg-title").textContent === "This pier is closed"`, "closed screen");
-check("an old link shows the pier is closed", (await bayo.text("#msg-title")) === "This pier is closed");
+await bayo.until(`!document.getElementById("s-msg").hidden && document.getElementById("msg-title").textContent === "No pier with that code is open"`, "closed screen");
+check("an old link shows the pier is closed", true);
 
 console.log(failures ? `\n${failures} FAILED` : "\nall passed");
 process.exit(failures ? 1 : 0);

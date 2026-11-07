@@ -1,9 +1,14 @@
-// PierHop's only server code. It serves the website and runs one small
-// "front desk" (a Durable Object) per pier: it keeps the guest list, passes
-// knocks to the host and relays the messages browsers need to connect to each
-// other. Files never pass through here; they go browser to browser over WebRTC.
+// PierHop's only server code: one small "front desk" (a Durable Object) per
+// pier. It keeps the guest list, passes knocks to the host and relays the
+// messages browsers need to connect to each other. Files never pass through
+// here; they go browser to browser over WebRTC.
+//
+// This code never sees a pier code. Pier pages are served by the static file
+// layer before any of this runs, and browsers address a pier by its room id: a
+// slow, one-way fingerprint of the code (PBKDF2, then HKDF) that can't be
+// turned back into the code or the keys derived from it.
 
-const CODE_RE = /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/;
+const ROOM_RE = /^[0-9a-f]{32}$/;
 const MAX_WAITING = 20;
 const MAX_ON_PIER = 50;
 const MAX_MESSAGE = 64 * 1024;
@@ -12,16 +17,8 @@ const HOST_GRACE_MS = 30_000; // a host who refreshes the page gets this long to
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const ws = url.pathname.match(/^\/api\/piers\/([a-z-]+)\/ws$/);
-    if (ws) {
-      if (!CODE_RE.test(ws[1])) return new Response("Not found", { status: 404 });
-      return env.PIERS.get(env.PIERS.idFromName(ws[1])).fetch(request);
-    }
-    // /new and /<pier code> are both the pier app.
-    const path = url.pathname.replace(/\/$/, "").slice(1);
-    if (path === "new" || CODE_RE.test(path)) {
-      return env.ASSETS.fetch(new Request(new URL("/pier", url), request));
-    }
+    const ws = url.pathname.match(/^\/api\/piers\/([0-9a-f]+)\/ws$/);
+    if (ws && ROOM_RE.test(ws[1])) return env.PIERS.get(env.PIERS.idFromName(ws[1])).fetch(request);
     return env.ASSETS.fetch(request);
   },
 };

@@ -2,6 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>
+// Pier links (/kqv-dhm-tpx) are served this page straight from the file
+// layer, so the code never reaches PierHop's server code. Hand it to the pier
+// app in the "#", which browsers never send to any server.
+(function () {
+  var m = location.pathname.match(/^\/([a-z]{3})[- ]?([a-z]{3})[- ]?([a-z]{3})\/?$/i);
+  if (m) location.replace("/pier#" + (m[1] + "-" + m[2] + "-" + m[3]).toLowerCase());
+  else if (/^\/new\/?$/.test(location.pathname)) location.replace("/pier");
+})();
+</script>
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PierHop: anyone with a browser can get your files</title>
 <meta name="description" content="Create a pier, send the link, and swap files with anyone on any phone or computer, anywhere in the world. End-to-end encrypted, nothing uploaded, and transfers carry on if the connection drops.">
@@ -63,7 +74,15 @@ p { text-wrap: pretty; }
 h1 { font-size: clamp(42px, 7vw, 82px); line-height: 1; letter-spacing: -.045em; font-weight: 650; margin: 0 auto; max-width: 11.5em; }
 .sub { font-size: clamp(19px, 2.2vw, 23px); line-height: 1.45; color: var(--text-2); max-width: 30em; margin: 26px auto 36px; }
 .cta-row { display: flex; justify-content: center; align-items: center; gap: 22px; flex-wrap: wrap; }
-.cta-row .free { color: var(--text-2); font-size: 16px; }
+.free { color: var(--text-2); font-size: 16px; margin: 18px 0 0; }
+.join { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 5px; }
+.join input { font: 500 17px "Geist", sans-serif; border: none; background: none; color: var(--text); width: 9.5em; padding: 10px 10px 10px 12px; outline: none; letter-spacing: .02em; }
+.join input::placeholder { color: var(--text-2); font-weight: 400; letter-spacing: 0; }
+.join button { font: 600 16px "Geist", sans-serif; border: none; border-radius: 9px; background: var(--sunk); color: var(--text); padding: 11px 16px; cursor: pointer; }
+.join button:hover { background: var(--line); }
+.join:focus-within { border-color: var(--accent); }
+.join.bad { border-color: #dc2626; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 .stage { position: relative; aspect-ratio: 100 / 56; margin: 72px auto 0; max-width: 1060px; }
 .stage .desk, .stage .phone { position: absolute; margin: 0; }
@@ -157,7 +176,7 @@ footer a:hover { color: var(--text); }
     <nav aria-label="Main">
       <a class="hide-sm" href="#how">How it works</a>
       <a class="hide-sm" href="/developers">Developers</a>
-      <a class="btn small" href="/new">Create a pier</a>
+      <a class="btn small" href="/pier">Create a pier</a>
     </nav>
   </header>
 </div>
@@ -168,9 +187,14 @@ footer a:hover { color: var(--text); }
       <h1>If they have a browser, they can get your files.</h1>
       <p class="sub">Create a pier, send the link, and swap files with anyone on any phone or computer, anywhere in the world.</p>
       <div class="cta-row">
-        <a class="btn" href="/new">Create a pier</a>
-        <span class="free">Free. End-to-end encrypted. No app, no sign-up.</span>
+        <a class="btn" href="/pier">Create a pier</a>
+        <form class="join" id="join" autocomplete="off">
+          <label class="sr" for="join-code">Pier code</label>
+          <input id="join-code" type="text" placeholder="Got a code?" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="14">
+          <button type="submit">Join</button>
+        </form>
       </div>
+      <p class="free">Free. End-to-end encrypted. No app, no sign-up.</p>
 
       <div class="stage">
         <picture class="desk">
@@ -229,9 +253,9 @@ footer a:hover { color: var(--text); }
     <div class="wrap">
       <div class="vault">
         <h2>Nobody sees what you send. Not even us.</h2>
-        <p class="vault-lede">Every pier has its own secret key, and it lives in your link. Only the people you send it to have it. We don't.</p>
+        <p class="vault-lede">Every pier's code is also its secret key. Only the people you give it to have it. We don't.</p>
         <div class="vault-grid">
-          <div><h3>The key never reaches us</h3><p>It sits after the # in your pier link. Browsers never send that part to any server, ours included.</p></div>
+          <div><h3>Your code is the key</h3><p>The short code you share unlocks your pier. Our server only ever sees a scrambled fingerprint of it, so it can't open your pier or read a thing.</p></div>
           <div><h3>Encrypted twice</h3><p>Every connection is encrypted, and every file is encrypted again with AES-256 before it leaves your device.</p></div>
           <div><h3>Tamper-proof</h3><p>If anyone tries to step in between you and your friends, us included, the connection is refused.</p></div>
           <div><h3>Nothing stored, nothing named</h3><p>Files go straight from your device to theirs. We never hold a copy, and we never even see file names.</p></div>
@@ -263,8 +287,8 @@ footer a:hover { color: var(--text); }
         <div><dt>Do my friends need an app or an account?</dt><dd>No. They open your link in whatever browser they have, type their name, and wait for you to let them in.</dd></div>
         <div><dt>Is it really free?</dt><dd>Yes. No premium tier, no ads, no sign-up. PierHop is open source.</dd></div>
         <div><dt>Who can see my files?</dt><dd>Only the people you let onto your pier. Not us, not your internet provider, nobody in between. You can remove anyone, and the pier disappears when you end it.</dd></div>
-        <div><dt>What can PierHop itself see?</dt><dd>Only what it takes to connect people: the pier code, the names people type when they ask to join, and network addresses. Never your files, their names, or your pier's key.</dd></div>
-        <div><dt>Someone sent me a pier link. What now?</dt><dd>Open it, type your name and wait a moment. Once they let you in, you'll see their files and can share your own.</dd></div>
+        <div><dt>What can PierHop itself see?</dt><dd>Only what it takes to connect people: a scrambled fingerprint of the pier code, the names people type when they ask to join, and network addresses. Never the code itself, your files or their names.</dd></div>
+        <div><dt>Someone gave me a pier code. What now?</dt><dd>Type it into the box at the top of this page, or open their link. Then type your name and wait a moment for them to let you in.</dd></div>
         <div><dt>What if my connection drops or I refresh?</dt><dd>You're back on the pier straight away, without knocking again, and downloads carry on from where they stopped.</dd></div>
         <div><dt>What happens if I close the tab?</dt><dd>If you made the pier, it ends and the files you shared stop being available. Nothing stays behind anywhere.</dd></div>
         <div><dt>Does it work on mobile data?</dt><dd>Yes. Wi-Fi, mobile data, home or abroad: it works wherever you can open a web page.</dd></div>
@@ -276,7 +300,7 @@ footer a:hover { color: var(--text); }
     <div class="wrap">
       <h2>Got something to send?</h2>
       <p class="lede">Your pier is one tap away.</p>
-      <a class="btn" href="/new">Create a pier</a>
+      <a class="btn" href="/pier">Create a pier</a>
     </div>
   </section>
 </main>
@@ -291,5 +315,20 @@ footer a:hover { color: var(--text); }
     </nav>
   </div>
 </footer>
+<script>
+"use strict";
+// Type a code the way people do: capitals, spaces, missing dashes are fine.
+document.getElementById("join").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var box = this;
+  var s = document.getElementById("join-code").value.toLowerCase().replace(/[^a-z]/g, "");
+  if (s.length !== 9) {
+    box.classList.add("bad");
+    setTimeout(function () { box.classList.remove("bad"); }, 1200);
+    return;
+  }
+  location.href = "/pier#" + s.slice(0, 3) + "-" + s.slice(3, 6) + "-" + s.slice(6);
+});
+</script>
 </body>
 </html>

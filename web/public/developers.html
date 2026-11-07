@@ -160,7 +160,7 @@ footer a:hover { color: var(--text); }
     <a class="brand" href="/" aria-label="PierHop home"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>PierHop</a>
     <nav aria-label="Main">
       <a href="https://github.com/OlutobiOgunsola/pierhop">GitHub</a>
-      <a class="btn small" href="/new">Create a pier</a>
+      <a class="btn small" href="/pier">Create a pier</a>
     </nav>
   </header>
 </div>
@@ -186,12 +186,12 @@ footer a:hover { color: var(--text); }
         <div><h3>Nothing is stored</h3><p>The server keeps no files and no accounts. It remembers only that a pier code was used, so an old link can never lead to someone else's pier.</p></div>
       </div>
       <div class="how">
-        <div><h3>The key lives in the link</h3><p>Each pier has a random 256-bit key in the URL fragment (after the #). Browsers never send the fragment to a server, so ours never sees it.</p></div>
+        <div><h3>The code is the key</h3><p>Pier codes are 9 letters from a 24-letter alphabet (about 2<sup>41</sup>). A pier link is served index.html by the static asset layer without running the Worker, which hands the code to the app in the URL fragment. The app stretches it with PBKDF2-SHA256 (300,000 rounds) into an HKDF key, from which it derives the room id the server sees, the signing key and the file keys. Guessing a code from its room id would take years per GPU.</p></div>
         <div><h3>Signed connection setup</h3><p>Each browser signs its DTLS fingerprint with an HMAC derived from the pier key. A server that swapped fingerprints to intercept the connection would fail the check, and the connection is refused.</p></div>
         <div><h3>Encrypted twice</h3><p>On top of WebRTC's DTLS, every chunk is sealed with AES-256-GCM under a fresh key per transfer (HKDF from the pier key and a random salt), with the chunk's position as its nonce.</p></div>
         <div><h3>Resumable without a server</h3><p>Downloads are written to the browser's origin private file system with a confirmed position every 2 MB, so a transfer carries on from there after a dropped connection or a refresh on either side.</p></div>
-        <div><h3>What the server sees</h3><p>The pier code, the names people type when they knock, device types, network addresses, and signed connection setup. Never files, file names or the key.</p></div>
-        <div><h3>What it doesn't protect against</h3><p>Anyone who has the full link and is let in sees what's shared on that pier. Keep the link to the people you mean to invite.</p></div>
+        <div><h3>What the server sees</h3><p>The room id (a one-way fingerprint of the code), the names people type when they knock, device types, network addresses, and signed connection setup. Never the code, files, file names or keys. Cloudflare's edge, which hosts the site, sees page URLs like any web host.</p></div>
+        <div><h3>What it doesn't protect against</h3><p>Anyone who has the code and is let in sees what's shared on that pier. Share the code only with the people you mean to invite.</p></div>
       </div>
       <div class="install" style="margin-top:56px">
         <aside>

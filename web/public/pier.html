@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
 <title>PierHop</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="/fonts/Geist.woff2" as="font" type="font/woff2" crossorigin>
@@ -73,7 +74,9 @@ input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow:
 .empty { color: var(--text-3); padding: 2px 0 4px; }
 
 .invite .link-box { display: flex; align-items: center; gap: 8px; background: var(--sunk); border-radius: 12px; padding: 6px 6px 6px 14px; }
-.invite .link-box span { flex: 1; min-width: 0; font: 14px "Geist Mono", ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.invite .link-box span { flex: 1; min-width: 0; font: 13px/1.45 "Geist Mono", ui-monospace, monospace; overflow-wrap: anywhere; padding: 6px 0; color: var(--text-2); }
+.invite .code-label { margin: -4px 0 2px; }
+.invite .pier-code { font: 600 30px/1.2 "Geist Mono", ui-monospace, monospace; letter-spacing: .04em; margin-bottom: 12px; }
 .invite .actions { display: flex; gap: 8px; margin-top: 10px; }
 .invite .actions button { flex: 1; }
 .qr { display: none; background: #fff; border-radius: 12px; padding: 10px; width: 168px; margin: 16px auto 0; border: 1px solid var(--line); }
@@ -154,6 +157,11 @@ input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow:
   </form>
 </section>
 
+<section class="screen" id="connecting" hidden>
+  <div class="spinner"></div>
+  <p>Securing your connection…</p>
+</section>
+
 <section class="screen" id="s-wait" hidden>
   <div class="spinner"></div>
   <h1>Asking to join</h1>
@@ -164,7 +172,7 @@ input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow:
 <section class="screen" id="s-msg" hidden>
   <h1 id="msg-title"></h1>
   <p id="msg-text"></p>
-  <a class="btn primary big" href="/new">Create your own pier</a>
+  <a class="btn primary big" href="/pier">Create your own pier</a>
 </section>
 
 <div class="banner" id="host-away" hidden><div>The host lost connection. Waiting for them to come back… Downloads will carry on where they stopped.</div></div>
@@ -189,6 +197,8 @@ input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow:
   <div class="col side">
     <section class="card invite">
       <div class="head"><h2>Invite people</h2></div>
+      <div class="code-label small muted">Pier code</div>
+      <div class="pier-code" id="pier-code"></div>
       <div class="link-box"><span id="invite-link"></span></div>
       <div class="actions">
         <button id="copy">Copy link</button>

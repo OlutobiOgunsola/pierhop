@@ -4,8 +4,10 @@
   "workers_dev": true, // https://pierhop.<account>.workers.dev
   "preview_urls": false,
   "compatibility_date": "2025-09-01",
-  // The website and the pier app. Anything not found here goes to the Worker.
-  "assets": { "directory": "./public", "binding": "ASSETS" },
+  // The website and the pier app. Page requests for anything else (like a
+  // pier link, /kqv-dhm-tpx) get index.html straight from the file layer,
+  // without running the Worker, so pier codes never reach our server code.
+  "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "single-page-application" },
   "durable_objects": { "bindings": [{ "name": "PIERS", "class_name": "Pier" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Pier"] }]
 }
