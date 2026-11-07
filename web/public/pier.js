@@ -410,6 +410,7 @@ function enterRoom() {
   history.replaceState(null, "", "/" + code);
   $("invite-link").textContent = pierLink().replace(/^https?:\/\//, "");
   $("share").hidden = !navigator.share;
+  $("local-note").hidden = !["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
   const qr = qrcode(0, "M");
   qr.addData(pierLink());
   qr.make();

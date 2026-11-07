@@ -43,7 +43,9 @@ async function person(label) {
   return { label, ev, until, go, join, visible, text };
 }
 
-const sha = `async (blob) => { const b = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }`;
+// FNV-1a over the bytes plus the length. crypto.subtle would be nicer, but it only
+// exists on HTTPS pages, and this test also runs against plain-HTTP local addresses.
+const sha = `async (blob) => { const b = new Uint8Array(await blob.arrayBuffer()); let h = 0x811c9dc5; for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 0x01000193) >>> 0; } return b.length + ":" + h.toString(16).padStart(8, "0"); }`;
 const makeFile = (name, bytes) => `(async () => {
   const data = new Uint8Array(${bytes}); for (let i = 0; i < data.length; i += 65536) crypto.getRandomValues(data.subarray(i, Math.min(i + 65536, data.length)));
   const f = new File([data], ${JSON.stringify(name)}); shareFiles([f]); return (${sha})(f); })()`;
