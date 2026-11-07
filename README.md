@@ -1,3 +1,5 @@
+<p><img src="site/logo.svg" alt="" width="72"></p>
+
 # PierHop
 
 Move files and text between your computer and your phone, tablet or any other

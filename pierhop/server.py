@@ -41,6 +41,7 @@ STATIC_FILES = {
     "qrcode.min.js": "application/javascript",
     "host.js": "application/javascript",
     "device.js": "application/javascript",
+    "favicon.svg": "image/svg+xml",
 }
 CHUNK = 1024 * 1024
 LINK_RE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")

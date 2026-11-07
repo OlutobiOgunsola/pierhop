@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2563eb">
 <title>PierHop</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <style>
 :root {
   --bg: #f4f4f5; --card: #fff; --text: #18181b; --muted: #71717a; --line: #e4e4e7;
@@ -17,7 +18,8 @@
 body { margin: 0; font: 16px/1.45 system-ui, -apple-system, Roboto, sans-serif; background: var(--bg); color: var(--text); }
 .wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; }
 header { padding: 8px 2px 14px; }
-h1 { font-size: 22px; margin: 0; }
+h1 { font-size: 22px; margin: 0; display: flex; align-items: center; gap: 8px; }
+h1 .mark { width: 28px; height: 28px; color: var(--accent); flex: none; }
 h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
 .sub { color: var(--muted); font-size: 14px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
@@ -98,7 +100,7 @@ textarea { min-height: 80px; resize: vertical; }
 <body>
 <div class="wrap">
   <header>
-    <h1>PierHop</h1>
+    <h1><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>PierHop</h1>
     <div class="sub" id="sub">Connecting…</div>
     <div class="me sub" id="me" hidden>
       <span>This device: <strong id="me-name"></strong></span>

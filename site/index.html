@@ -53,7 +53,7 @@ p { text-wrap: pretty; }
 .top { height: 64px; display: flex; align-items: center; gap: 28px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; font-size: 18px; letter-spacing: -.01em; }
 .brand:hover { color: var(--text); }
-.brand svg { width: 28px; height: 28px; }
+.brand .mark { width: 30px; height: 30px; color: var(--accent); }
 .top nav { margin-left: auto; display: flex; align-items: center; gap: 24px; font-size: 15px; }
 .top nav a:not(.btn) { color: var(--text-2); }
 .top nav a:not(.btn):hover { color: var(--text); }
@@ -155,7 +155,7 @@ footer a:hover { color: var(--text); }
 <div class="wrap">
   <header class="top">
     <a class="brand" href="./" aria-label="PierHop home">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2563eb"/><g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10.5h14m-3.5-3.5 3.5 3.5-3.5 3.5"/><path d="M24 17.5H10m3.5-3.5-3.5 3.5 3.5 3.5"/><path d="M6.5 24.5c2.2-1.6 4.3-1.6 6.5 0s4.3 1.6 6.5 0 4.3-1.6 6.5 0"/></g></svg>
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round"><path d="M8.6 14.4C11 6.4 21 6.4 23.4 14.4" stroke-width="3"/><path d="M4 27.6c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0 4 1.6 6 0" stroke-width="2.4"/></g><circle cx="7" cy="20.4" r="3.5" fill="currentColor"/><circle cx="25" cy="20.4" r="3.5" fill="currentColor"/></svg>
       PierHop
     </a>
     <nav aria-label="Main">

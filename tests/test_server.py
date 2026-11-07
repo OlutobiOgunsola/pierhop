@@ -480,7 +480,7 @@ class PierHopTest(unittest.TestCase):
         self.assertIn(b"Link not found", body)
 
     def test_static_whitelist(self):
-        for name in ("qrcode.min.js", "host.js", "device.js"):
+        for name in ("qrcode.min.js", "host.js", "device.js", "favicon.svg"):
             self.assertEqual(self.request("GET", "/static/" + name)[0], 200)
         self.assertEqual(self.request("GET", "/static/../server.py")[0], 404)
         self.assertEqual(self.request("GET", "/static/host.html")[0], 404)
