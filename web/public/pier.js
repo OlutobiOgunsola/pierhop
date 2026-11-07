@@ -444,14 +444,18 @@ function addPeer(info, initiator) {
   render();
 }
 
-function makeConnection(peer, initiator) {
+// Every connection attempt has an id ("gen"). Messages for an older attempt
+// are ignored, so two reconnects started at once can't get crossed.
+function makeConnection(peer, initiator, gen = randomId(8)) {
   if (peer.pc) { try { peer.pc.close(); } catch {} }
   pauseTransfers(peer.id);
   const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  pc.gen = gen;
+  pc.born = Date.now();
   peer.pc = pc;
   peer.ctl = null;
   peer.pending = [];
-  pc.onicecandidate = (e) => { if (e.candidate) send({ type: "signal", to: peer.id, data: { candidate: e.candidate.toJSON() } }); };
+  pc.onicecandidate = (e) => { if (e.candidate) send({ type: "signal", to: peer.id, data: { candidate: e.candidate.toJSON(), gen } }); };
   pc.onconnectionstatechange = () => {
     render();
     if (peer.pc !== pc) return;
@@ -468,10 +472,16 @@ function makeConnection(peer, initiator) {
       .then((offer) => pc.setLocalDescription(offer))
       .then(async () => {
         const d = pc.localDescription.toJSON();
-        send({ type: "signal", to: peer.id, data: { sdp: d, sig: await signDescription(d, peer.id) } });
+        send({ type: "signal", to: peer.id, data: { sdp: d, sig: await signDescription(d, peer.id), gen } });
       })
       .catch(() => {});
   }
+}
+
+// An attempt that's under way and not yet given up on.
+function attemptInFlight(peer) {
+  const pc = peer.pc;
+  return pc && Date.now() - pc.born < 4000 && ["new", "connecting", "connected"].includes(pc.connectionState);
 }
 
 // A direct connection dropped. The side with the smaller id starts a fresh
@@ -484,7 +494,7 @@ function recover(peer) {
   render();
   setTimeout(() => {
     peer.recovering = false;
-    if (peers.get(peer.id) !== peer) return;
+    if (peers.get(peer.id) !== peer || attemptInFlight(peer)) return;
     if (me.id < peer.id) makeConnection(peer, true);
     else send({ type: "signal", to: peer.id, data: { reconnect: true } });
   }, 1000);
@@ -496,7 +506,7 @@ function onSignal(from, data) {
   // Handle one message at a time so candidates never race the description they belong to.
   peer.chain = peer.chain.then(async () => {
     if (data.reconnect) {
-      if (me.id < from && !peer.blocked) makeConnection(peer, true);
+      if (me.id < from && !peer.blocked && !attemptInFlight(peer)) makeConnection(peer, true);
       return;
     }
     if (data.sdp) {
@@ -507,16 +517,21 @@ function onSignal(from, data) {
         return;
       }
       peer.blocked = false;
-      if (data.sdp.type === "offer") makeConnection(peer, false); // an offer always means a fresh connection
+      if (data.sdp.type === "offer") {
+        if (peer.pc && peer.pc.gen === data.gen) return; // already answering this one
+        makeConnection(peer, false, data.gen); // an offer always means a fresh connection
+      } else if (!peer.pc || peer.pc.gen !== data.gen || peer.pc.signalingState !== "have-local-offer") {
+        return; // an answer to an attempt we've since replaced
+      }
       const pc = peer.pc;
       await pc.setRemoteDescription(data.sdp);
       for (const c of peer.pending.splice(0)) await pc.addIceCandidate(c).catch(() => {});
       if (data.sdp.type === "offer") {
         await pc.setLocalDescription(await pc.createAnswer());
         const d = pc.localDescription.toJSON();
-        send({ type: "signal", to: from, data: { sdp: d, sig: await signDescription(d, from) } });
+        send({ type: "signal", to: from, data: { sdp: d, sig: await signDescription(d, from), gen: data.gen } });
       }
-    } else if (data.candidate && peer.pc) {
+    } else if (data.candidate && peer.pc && peer.pc.gen === data.gen) {
       if (peer.pc.remoteDescription) await peer.pc.addIceCandidate(data.candidate).catch(() => {});
       else peer.pending.push(data.candidate);
     }
