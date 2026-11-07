@@ -3,6 +3,9 @@
 // system) as they arrive, so a transfer can carry on from where it stopped,
 // even after a refresh. Sync access handles write in place and only exist in
 // workers, which is why this is a worker. Nothing here leaves the device.
+//
+// Every handle call is awaited: older Safari versions return promises from
+// getSize/write/flush/truncate/close, newer browsers return values directly.
 
 const handles = new Map(); // name -> FileSystemSyncAccessHandle
 let root = null;
@@ -20,36 +23,36 @@ async function open(name) {
   return handle;
 }
 
-function close(name) {
+async function close(name) {
   const h = handles.get(name);
   if (!h) return;
-  try { h.flush(); } catch {}
-  try { h.close(); } catch {}
   handles.delete(name);
+  try { await h.flush(); } catch {}
+  try { await h.close(); } catch {}
 }
 
 const ops = {
   // Opens the file, cuts off anything past the last confirmed byte, and reports its size.
   async open({ name, keep }) {
     const h = await open(name);
-    if (typeof keep === "number" && h.getSize() > keep) h.truncate(keep);
-    return h.getSize();
+    if (typeof keep === "number" && (await h.getSize()) > keep) await h.truncate(keep);
+    return await h.getSize();
   },
   async write({ name, at, data }) {
     const h = await open(name);
-    return h.write(new Uint8Array(data), { at });
+    return await h.write(new Uint8Array(data), { at });
   },
   async flush({ name }) {
     const h = handles.get(name);
-    if (h) h.flush();
+    if (h) await h.flush();
     return true;
   },
   async close({ name }) {
-    close(name);
+    await close(name);
     return true;
   },
   async remove({ name }) {
-    close(name);
+    await close(name);
     try { await (await dir()).removeEntry(name); } catch {}
     return true;
   },

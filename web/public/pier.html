@@ -99,6 +99,14 @@ input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow:
 .drop button { margin-top: 10px; }
 @media (pointer: coarse) { .drop { display: none; } }
 .group + .group { margin-top: 18px; }
+.reshare { background: color-mix(in srgb, var(--warn) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warn) 32%, transparent); border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+.reshare p { margin: 0 0 10px; color: var(--text-2); }
+.reshare strong { color: var(--text); }
+.reshare ul { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.reshare li { display: flex; align-items: center; gap: 10px; }
+.reshare li .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.reshare .ft { width: 32px; height: 32px; font-size: 9px; }
+.reshare .row { display: flex; gap: 8px; flex-wrap: wrap; }
 .group h3 { font-size: 13.5px; font-weight: 600; color: var(--text-2); margin: 0 0 4px; }
 .files { list-style: none; margin: 0; padding: 0; }
 .files li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
@@ -172,6 +180,7 @@ input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow:
         <button class="primary" id="add">Share files</button>
         <input type="file" id="picker" multiple hidden>
       </div>
+      <div class="reshare" id="reshare" hidden></div>
       <div id="files"></div>
       <div class="drop" id="drop">Drop files here to share them with everyone on this pier</div>
       <p class="note">Files go straight from your device to theirs. Keep this page open while people download.</p>

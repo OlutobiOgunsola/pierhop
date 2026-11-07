@@ -101,12 +101,16 @@ function newCode() {
 }
 
 // A stable name for a file, so the same file shared again (after a refresh)
-// is recognised and a download of it can carry on.
-function fileKey(file) {
-  const s = `${file.name}|${file.size}|${file.lastModified}`;
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
-  return h.toString(36) + file.size.toString(36);
+// is recognised and a download of it can carry on. Built from the contents
+// (name, size, first and last 64 KB) rather than the modified date, which
+// phones often change each time a photo is picked.
+async function fileKey(file) {
+  const head = new Uint8Array(await file.slice(0, 65536).arrayBuffer());
+  const tail = new Uint8Array(await file.slice(Math.max(0, file.size - 65536)).arrayBuffer());
+  const label = enc(`${file.name}|${file.size}|`);
+  const all = new Uint8Array(label.length + head.length + tail.length);
+  all.set(label); all.set(head, label.length); all.set(tail, label.length + head.length);
+  return b64(await crypto.subtle.digest("SHA-256", all)).slice(0, 22);
 }
 
 function store(key, value) {
@@ -210,7 +214,11 @@ const disk = (() => {
 // The same interface, backed by private storage or, where that isn't available,
 // by memory (which still resumes, as long as this page stays open).
 async function openStore(name) {
-  if (await disk.available()) {
+  return (await disk.available()) ? diskStore(name) : memoryStore();
+}
+
+function diskStore(name) {
+  {
     return {
       kind: "disk",
       open: (keep) => disk.call("open", { name, keep }),
@@ -225,6 +233,9 @@ async function openStore(name) {
       },
     };
   }
+}
+
+function memoryStore() {
   const parts = [];
   let length = 0;
   return {
@@ -591,25 +602,53 @@ function sendFileList(peer) {
   if (connected(peer)) peer.ctl.send(JSON.stringify({ t: "files", files: fileList() }));
 }
 
-function shareFiles(files) {
+async function shareFiles(files) {
   const known = new Set([...myFiles.values()].map((f) => f.key));
   let added = 0;
   for (const file of files) {
-    const key = fileKey(file);
+    const key = await fileKey(file);
     if (known.has(key)) continue;
     known.add(key);
     myFiles.set(randomId(), { file, key });
     added++;
   }
+  rememberShared();
   for (const p of peers.values()) sendFileList(p);
   if (added) toast(added === 1 ? `Sharing ${files[0].name}` : `Sharing ${added} files`);
   render();
 }
 
 function unshare(id) {
+  const gone = myFiles.get(id);
   myFiles.delete(id);
+  if (gone) forgetShared(gone.key);
   for (const p of peers.values()) sendFileList(p);
   render();
+}
+
+// After a refresh the browser no longer has the files you were sharing (pages
+// can't reopen files by themselves), so remember their names, sizes and keys
+// (never their contents) to ask you to pick them again.
+function sharedBefore() {
+  try { return JSON.parse(recall("pierhop:shared:" + code)) || []; } catch { return []; }
+}
+
+function rememberShared() {
+  const list = sharedBefore();
+  const keys = new Set(list.map((f) => f.key));
+  for (const f of myFiles.values()) {
+    if (!keys.has(f.key)) list.push({ key: f.key, name: f.file.name, size: f.file.size });
+  }
+  store("pierhop:shared:" + code, JSON.stringify(list));
+}
+
+function forgetShared(key) {
+  store("pierhop:shared:" + code, JSON.stringify(sharedBefore().filter((f) => f.key !== key)));
+}
+
+function toReshare() {
+  const have = new Set([...myFiles.values()].map((f) => f.key));
+  return sharedBefore().filter((f) => !have.has(f.key));
 }
 
 function chunkSize(pc) {
@@ -682,7 +721,19 @@ function resumeFrom(peer) {
   }
 }
 
+// Starts or continues a download. Anything unexpected leaves it paused, never
+// stuck, so the automatic retry (or the Continue button) can pick it up again.
 async function download(peer, f) {
+  try {
+    await runDownload(peer, f);
+  } catch {
+    const t = transfers.get(transferId(peer.id, f.key));
+    if (t && t.status !== "done" && t.status !== "failed") t.status = "paused";
+    render();
+  }
+}
+
+async function runDownload(peer, f) {
   if (!connected(peer)) return toast(`Still connecting to ${peer.name}…`);
   const tkey = transferId(peer.id, f.key);
   let t = transfers.get(tkey);
@@ -692,13 +743,22 @@ async function download(peer, f) {
   if (!t) t = { key: tkey, dir: "down", name: f.name, size: f.size, peerId: peer.id, fileKey: f.key, who: peer.name, done: rec.confirmed };
   t.status = "starting";
   t.error = null;
+  t.lastTry = t.lastProgress = Date.now();
   transfers.set(tkey, t);
   render();
 
   if (!t.store) t.store = await openStore(rec.store);
   // Private storage is cut back to the last confirmed byte; memory holds
-  // exactly what arrived, in order, so all of it counts.
-  const pos0 = await t.store.open(rec.confirmed);
+  // exactly what arrived, in order, so all of it counts. If private storage
+  // misbehaves on this browser, carry on in memory rather than get stuck.
+  let pos0;
+  try {
+    pos0 = await t.store.open(rec.confirmed);
+  } catch {
+    t.store = memoryStore();
+    rec.confirmed = 0;
+    pos0 = 0;
+  }
   let pos = pos0;
   rec.confirmed = pos;
   rec.at = Date.now();
@@ -764,6 +824,7 @@ async function download(peer, f) {
     await t.store.write(pos, plain);
     pos += n;
     t.done = pos;
+    t.lastProgress = Date.now();
     sinceConfirm += n;
     if (sinceConfirm >= CONFIRM_EVERY) await confirm();
     render();
@@ -844,8 +905,13 @@ function transferRow(t, f, peer) {
     meta = `${size(t.done)} of ${size(t.size)}` + (t.resumedFrom ? " · picked up where it stopped" : "");
     right = el("span", { class: "small muted" }, pct(t.done, t.size));
   } else if (t && t.status === "paused") {
-    meta = `Paused at ${pct(t.done, t.size)} · carries on when ${live ? "it reconnects" : `${t.who} is back`}`;
-    right = live && f ? el("button", { onclick: () => download(peer, f) }, "Resume") : null;
+    let why;
+    if (live && f) why = "carries on by itself, or tap Continue";
+    else if (live) why = `waiting for ${t.who} to share it again`;
+    else if (peer) why = `reconnecting to ${t.who}…`;
+    else why = `carries on when ${t.who} is back`;
+    meta = `Paused at ${pct(t.done, t.size)} · ${why}`;
+    right = live && f ? el("button", { class: "primary", onclick: () => download(peer, f) }, "Continue") : null;
   } else if (t && t.status === "done") {
     meta = `${size(t.size)} · downloaded`;
     right = el("button", { onclick: () => save(t) }, "Save again");
@@ -902,6 +968,21 @@ function renderRoom() {
     ));
   }
   if (!peers.size) people.append(el("li", { class: "empty" }, "Nobody else yet. Send them the link."));
+
+  // Files you were sharing before a refresh
+  const missing = toReshare();
+  const notice = $("reshare");
+  notice.hidden = !missing.length;
+  if (missing.length) {
+    notice.replaceChildren(
+      el("p", {}, el("strong", {}, "You refreshed, so pick these files again to keep sharing them."),
+        " Anyone downloading them will carry on from where they stopped."),
+      el("ul", {}, ...missing.map((f) => el("li", {}, typeTile(f.name), el("span", { class: "name" }, f.name), el("span", { class: "muted small" }, size(f.size))))),
+      el("div", { class: "row" },
+        el("button", { class: "primary", onclick: () => $("picker").click() }, "Pick files again"),
+        el("button", { class: "quiet", onclick: () => { for (const f of missing) forgetShared(f.key); render(); } }, "Stop sharing them")),
+    );
+  }
 
   // Files
   const box = $("files");
@@ -1005,6 +1086,31 @@ document.addEventListener("drop", (e) => {
 addEventListener("beforeunload", (e) => {
   if (finished || $("s-room").hidden) return;
   if ((me.isHost && peers.size) || [...transfers.values()].some((t) => t.status === "active")) e.preventDefault();
+});
+
+// Keeps unfinished downloads moving: continues paused ones whenever their
+// sender is connected and sharing the file, and restarts any that have gone
+// quiet (a connection can die without telling anyone).
+function keepDownloadsMoving() {
+  const now = Date.now();
+  for (const t of transfers.values()) {
+    if (t.dir !== "down") continue;
+    if ((t.status === "active" || t.status === "starting") && now - (t.lastProgress || now) > 15000) {
+      t.status = "paused";
+      if (t.channel) { try { t.channel.close(); } catch {} }
+      render();
+    }
+    if (t.status === "paused" && now - (t.lastTry || 0) > 4000) {
+      const peer = peers.get(t.peerId);
+      const f = peer && peer.files.find((x) => x.key === t.fileKey);
+      if (peer && f && connected(peer)) download(peer, f);
+    }
+  }
+}
+setInterval(keepDownloadsMoving, 2000);
+// Phones pause background tabs; check straight away when the page is back.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") keepDownloadsMoving();
 });
 
 // Opening the full link after a shortened one only changes the "#" part,
