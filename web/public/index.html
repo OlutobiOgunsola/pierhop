@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PierHop: anyone with a browser can get your files</title>
-<meta name="description" content="Create a pier, send the link, and swap files with anyone on any phone or computer, anywhere in the world. No app, no account, nothing uploaded.">
+<meta name="description" content="Create a pier, send the link, and swap files with anyone on any phone or computer, anywhere in the world. End-to-end encrypted, nothing uploaded, and transfers carry on if the connection drops.">
 <meta property="og:title" content="PierHop: anyone with a browser can get your files">
 <meta property="og:description" content="Create a pier, send the link, swap files. Any device, anywhere. No app, no account.">
 <meta property="og:type" content="website">
@@ -97,6 +97,29 @@ h2 { font-size: clamp(32px, 4.4vw, 52px); line-height: 1.06; letter-spacing: -.0
 .devices li:nth-child(odd) { padding-right: 16px; }
 .devices small { display: block; font-size: 15px; font-weight: 400; color: var(--text-2); letter-spacing: 0; }
 
+/* Privacy: a dark panel in both themes */
+.vault { background: #0d1117; color: #eef0f4; border-radius: 24px; padding: 72px 64px; }
+.vault h2 { color: #fff; max-width: 14ch; font-size: clamp(36px, 5vw, 60px); }
+.vault-lede { color: #a9b1bd; font-size: 21px; max-width: 32em; margin: 0 0 52px; }
+.vault-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 36px 48px; border-top: 1px solid #262c36; padding-top: 40px; }
+.vault-grid h3 { font-size: 19px; margin: 0 0 6px; letter-spacing: -.01em; color: #fff; }
+.vault-grid p { margin: 0; color: #a9b1bd; font-size: 16.5px; }
+@media (max-width: 760px) { .vault { padding: 40px 24px; border-radius: 18px; } .vault-grid { grid-template-columns: 1fr; gap: 26px; } }
+
+/* Resume: a progress bar that pauses and carries on */
+.resume { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 64px; align-items: center; }
+.resume .lede { margin-bottom: 0; }
+.resume-steps { display: grid; gap: 14px; }
+.rs { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; font-size: 15px; }
+.rs span { color: var(--text-2); }
+.rs b { font-weight: 600; }
+.rs i { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) var(--w), var(--sunk) var(--w)); }
+.rs.paused i { background: linear-gradient(90deg, #d97706 var(--w), var(--sunk) var(--w)); }
+.rs.done i { background: #16a34a; }
+.catch { grid-column: 1 / -1; color: var(--text-2); font-size: 17px; margin: 24px 0 0; padding-top: 22px; border-top: 1px solid var(--line); }
+.catch strong { color: var(--text); }
+@media (max-width: 860px) { .resume { grid-template-columns: 1fr; } }
+
 /* The one rule */
 .rule { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 56px; display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
 .rule h2 { margin: 0; }
@@ -146,7 +169,7 @@ footer a:hover { color: var(--text); }
       <p class="sub">Create a pier, send the link, and swap files with anyone on any phone or computer, anywhere in the world.</p>
       <div class="cta-row">
         <a class="btn" href="/new">Create a pier</a>
-        <span class="free">Free. No app, no sign-up.</span>
+        <span class="free">Free. End-to-end encrypted. No app, no sign-up.</span>
       </div>
 
       <div class="stage">
@@ -202,15 +225,34 @@ footer a:hover { color: var(--text); }
     </div>
   </section>
 
-  <section>
+  <section id="private">
     <div class="wrap">
-      <div class="rule">
-        <h2>Nothing is uploaded. Ever.</h2>
-        <div>
-          <p>Files go straight from your device to theirs. There's no cloud copy, no storage and no account, so there's nothing to leak and nothing to delete.</p>
-          <p><strong>The one catch: you both need to be online at the same time.</strong> Keep the pier open until people have your files. When you close it, the pier ends.</p>
+      <div class="vault">
+        <h2>Nobody sees what you send. Not even us.</h2>
+        <p class="vault-lede">Every pier has its own secret key, and it lives in your link. Only the people you send it to have it. We don't.</p>
+        <div class="vault-grid">
+          <div><h3>The key never reaches us</h3><p>It sits after the # in your pier link. Browsers never send that part to any server, ours included.</p></div>
+          <div><h3>Encrypted twice</h3><p>Every connection is encrypted, and every file is encrypted again with AES-256 before it leaves your device.</p></div>
+          <div><h3>Tamper-proof</h3><p>If anyone tries to step in between you and your friends, us included, the connection is refused.</p></div>
+          <div><h3>Nothing stored, nothing named</h3><p>Files go straight from your device to theirs. We never hold a copy, and we never even see file names.</p></div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section id="resume">
+    <div class="wrap resume">
+      <div>
+        <h2>Bad connection? It carries on.</h2>
+        <p class="lede">If the network drops halfway through a big video, your download picks up exactly where it stopped. Even if you refresh. Even if they do. You never pay for the same data twice.</p>
+      </div>
+      <div class="resume-steps" aria-hidden="true">
+        <div class="rs"><span>Downloading</span><b>64%</b><i style="--w:64%"></i></div>
+        <div class="rs paused"><span>Connection lost</span><b>Paused at 64%</b><i style="--w:64%"></i></div>
+        <div class="rs"><span>Back online</span><b>Carries on from 64%</b><i style="--w:82%"></i></div>
+        <div class="rs done"><span>Done</span><b>100%</b><i style="--w:100%"></i></div>
+      </div>
+      <p class="catch"><strong>The one catch:</strong> you both need to be online at the same time. Keep your pier open until people have your files. When you end it, it's gone.</p>
     </div>
   </section>
 
@@ -220,9 +262,11 @@ footer a:hover { color: var(--text); }
       <dl class="faq">
         <div><dt>Do my friends need an app or an account?</dt><dd>No. They open your link in whatever browser they have, type their name, and wait for you to let them in.</dd></div>
         <div><dt>Is it really free?</dt><dd>Yes. No premium tier, no ads, no sign-up. PierHop is open source.</dd></div>
-        <div><dt>Who can see my files?</dt><dd>Only the people you let onto your pier. You can remove anyone, and the pier disappears when you end it.</dd></div>
+        <div><dt>Who can see my files?</dt><dd>Only the people you let onto your pier. Not us, not your internet provider, nobody in between. You can remove anyone, and the pier disappears when you end it.</dd></div>
+        <div><dt>What can PierHop itself see?</dt><dd>Only what it takes to connect people: the pier code, the names people type when they ask to join, and network addresses. Never your files, their names, or your pier's key.</dd></div>
         <div><dt>Someone sent me a pier link. What now?</dt><dd>Open it, type your name and wait a moment. Once they let you in, you'll see their files and can share your own.</dd></div>
-        <div><dt>What happens if I close the tab?</dt><dd>Your pier ends and the files you shared stop being available. Nothing stays behind anywhere.</dd></div>
+        <div><dt>What if my connection drops or I refresh?</dt><dd>You're back on the pier straight away, without knocking again, and downloads carry on from where they stopped.</dd></div>
+        <div><dt>What happens if I close the tab?</dt><dd>If you made the pier, it ends and the files you shared stop being available. Nothing stays behind anywhere.</dd></div>
         <div><dt>Does it work on mobile data?</dt><dd>Yes. Wi-Fi, mobile data, home or abroad: it works wherever you can open a web page.</dd></div>
       </dl>
     </div>

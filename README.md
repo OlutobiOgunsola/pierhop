@@ -20,6 +20,20 @@ keeps the guest list and helps browsers find each other; it never sees a file
 and stores nothing. The one catch: whoever is sharing has to stay online until
 the others have the file. When the host ends the pier, it's gone.
 
+**Private, even from us.** Each pier has a random 256-bit key in the link's
+fragment (after the `#`), which browsers never send to a server. Browsers sign
+their DTLS fingerprints with an HMAC derived from it, so a server that tried to
+intercept a connection would be caught and refused. On top of DTLS, every chunk
+is encrypted with AES-256-GCM under a fresh per-transfer key (HKDF from the
+pier key and a random salt). File names and lists only travel inside those
+connections.
+
+**Picks up where it stopped.** Downloads are written to the browser's origin
+private file system with a confirmed position every 2 MB. If a connection
+drops, or either person refreshes, people rejoin without knocking and the
+transfer carries on from the last confirmed byte. A sender who refreshes just
+shares the same file again.
+
 ### Run it locally
 
 The website and the pier server live in `web/`: a static site plus a
@@ -35,8 +49,10 @@ npx wrangler dev          # http://localhost:8787
 pinned to 4.86, the last version that runs on Node.js 20.
 
 `web/test/pier.e2e.mjs` is an end-to-end test that plays four people in
-separate browser sessions (create, knock, let in, deny, remove, files in every
-direction checked byte for byte, host refresh, end). Start `wrangler dev` and a
+separate browser sessions: knocking, letting in and denying, files in every
+direction checked byte for byte, resuming after a dropped connection and after
+either side refreshes, a check that no file name or key ever reaches the server,
+a simulated malicious server tampering with a connection, removal and ending. Start `wrangler dev` and a
 Chrome with `--remote-debugging-port=9336`, then run
 `node --experimental-websocket web/test/pier.e2e.mjs`.
 

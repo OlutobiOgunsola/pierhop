@@ -37,9 +37,14 @@ function token() {
 
 // Uses the WebSocket Hibernation API: between messages the pier sleeps and
 // costs nothing, so anything that must survive lives either on the socket
-// (serializeAttachment: who this person is) or in storage (meta: who the host
-// is). The host's grace period after a refresh is an alarm, not a timer,
-// because timers don't survive hibernation.
+// (serializeAttachment: who this person is) or in storage.
+//
+// Storage holds only what the guest list needs: "meta" (who the host is) and
+// one "g:<ticket>" entry per person let in, so they can rejoin after a
+// dropped connection or a refresh without knocking again. Each person keeps
+// the same id across reconnects, which lets browsers resume transfers.
+// Nothing here ever carries a file, a file name or the pier's secret key:
+// those only travel inside the encrypted browser-to-browser connections.
 export class Pier {
   constructor(state) {
     this.state = state;
@@ -56,7 +61,7 @@ export class Pier {
   }
 
   find(id) {
-    return this.sockets().find((ws) => this.info(ws).id === id);
+    return this.sockets().find((ws) => { const p = this.info(ws); return p.id === id && p.status !== "gone"; });
   }
 
   async meta() {
@@ -64,7 +69,7 @@ export class Pier {
   }
 
   hostOnline(meta) {
-    return !!meta && this.sockets().some((ws) => { const p = this.info(ws); return p.id === meta.hostId && p.status === "in"; });
+    return !!meta && !!this.find(meta.hostId) && this.info(this.find(meta.hostId)).status === "in";
   }
 
   public(p, meta) {
@@ -86,6 +91,17 @@ export class Pier {
     }
   }
 
+  // A returning person's old connection may not have noticed it's dead yet.
+  dropOld(id) {
+    for (const ws of this.sockets()) {
+      const p = this.info(ws);
+      if (p.id === id && p.status !== "gone") {
+        ws.serializeAttachment({ ...p, status: "gone" });
+        try { ws.close(4001, "replaced"); } catch {}
+      }
+    }
+  }
+
   // --- connections ---
 
   async fetch(request) {
@@ -93,48 +109,55 @@ export class Pier {
     const url = new URL(request.url);
     const [client, server] = Object.values(new WebSocketPair());
     this.state.acceptWebSocket(server);
-    const person = { id: crypto.randomUUID().slice(0, 8), name: "", device: "", status: "new" };
     const meta = await this.meta();
-    const hostParam = url.searchParams.get("host");
+    const q = (k) => url.searchParams.get(k);
 
-    if (url.searchParams.get("create") === "1") {
+    if (q("create") === "1") {
       // A code is only ever used once, so an old link can't lead to someone else's pier.
       if (meta || (await this.state.storage.get("used"))) {
         this.send(server, { type: "error", reason: "taken" });
         server.close(4000, "taken");
       } else {
-        Object.assign(person, this.hostDetails(url));
+        const person = { id: newId(), status: "in", ...this.details(url, "Host") };
         server.serializeAttachment(person);
         const fresh = { hostToken: token(), hostId: person.id, hostName: person.name };
         await this.state.storage.put({ used: true, meta: fresh });
         this.send(server, { type: "created", you: person.id, token: fresh.hostToken });
       }
-    } else if (meta && hostParam && hostParam === meta.hostToken && !this.hostOnline(meta)) {
-      // The host refreshed or reconnected: give them the pier back.
+    } else if (meta && q("host") && q("host") === meta.hostToken) {
+      // The host is back (refresh or new network): same id, same pier.
       await this.state.storage.deleteAlarm();
-      Object.assign(person, this.hostDetails(url));
+      this.dropOld(meta.hostId);
+      const person = { id: meta.hostId, status: "in", ...this.details(url, meta.hostName) };
       server.serializeAttachment(person);
-      meta.hostId = person.id;
-      meta.hostName = person.name;
-      await this.state.storage.put("meta", meta);
+      if (person.name !== meta.hostName) await this.state.storage.put("meta", { ...meta, hostName: person.name });
       this.send(server, { type: "created", you: person.id, token: meta.hostToken, peers: this.onPier(meta, person.id), rejoined: true });
       this.broadcast({ type: "peer-joined", peer: this.public(person, meta) }, person.id);
       for (const ws of this.sockets()) {
         const p = this.info(ws);
         if (p.status === "waiting") this.send(server, { type: "knock", peer: this.public(p, meta) });
       }
+    } else if (meta && q("guest") && (await this.state.storage.get("g:" + q("guest")))) {
+      // Someone the host already let in, coming back: no need to knock again.
+      const ticket = q("guest");
+      const rec = await this.state.storage.get("g:" + ticket);
+      this.dropOld(rec.id);
+      const person = { id: rec.id, name: rec.name, device: rec.device, status: "in", ticket };
+      server.serializeAttachment(person);
+      this.send(server, { type: "welcome", you: person.id, hostId: meta.hostId, peers: this.onPier(meta, person.id), ticket, rejoined: true });
+      this.broadcast({ type: "peer-joined", peer: this.public(person, meta) }, person.id);
     } else if (!meta) {
       this.send(server, { type: "no-pier" });
       server.close(4004, "no pier");
     } else {
-      server.serializeAttachment(person);
+      server.serializeAttachment({ id: newId(), name: "", device: "", status: "new" });
       this.send(server, { type: "hello", hostName: meta.hostName, hostOnline: this.hostOnline(meta) });
     }
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  hostDetails(url) {
-    return { status: "in", name: clean(url.searchParams.get("name"), 40) || "Host", device: clean(url.searchParams.get("device"), 20) };
+  details(url, fallbackName) {
+    return { name: clean(url.searchParams.get("name"), 40) || fallbackName, device: clean(url.searchParams.get("device"), 20) };
   }
 
   async webSocketMessage(ws, raw) {
@@ -142,7 +165,7 @@ export class Pier {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
     const person = this.info(ws);
-    if (!person.id) return;
+    if (!person.id || person.status === "gone") return;
     const meta = await this.meta();
     if (!meta) return;
     const isHost = person.id === meta.hostId;
@@ -168,15 +191,18 @@ export class Pier {
       if (!target || msg.id === meta.hostId) return;
       const p = this.info(target);
       if (msg.type === "allow" && p.status === "waiting") {
-        p.status = "in";
-        target.serializeAttachment(p);
-        this.send(target, { type: "welcome", you: p.id, hostId: meta.hostId, peers: this.onPier(meta, p.id) });
-        this.broadcast({ type: "peer-joined", peer: this.public(p, meta) }, p.id);
+        const ticket = token();
+        await this.state.storage.put("g:" + ticket, { id: p.id, name: p.name, device: p.device });
+        const admitted = { ...p, status: "in", ticket };
+        target.serializeAttachment(admitted);
+        this.send(target, { type: "welcome", you: p.id, hostId: meta.hostId, peers: this.onPier(meta, p.id), ticket });
+        this.broadcast({ type: "peer-joined", peer: this.public(admitted, meta) }, p.id);
       } else if (msg.type === "deny" && p.status === "waiting") {
         target.serializeAttachment({ ...p, status: "gone" });
         this.send(target, { type: "denied" });
         target.close(4003, "denied");
       } else if (msg.type === "remove" && p.status === "in") {
+        if (p.ticket) await this.state.storage.delete("g:" + p.ticket);
         target.serializeAttachment({ ...p, status: "gone" });
         this.send(target, { type: "removed" });
         target.close(4003, "removed");
@@ -185,7 +211,9 @@ export class Pier {
       return;
     }
 
-    // WebRTC setup messages, only between people who are on the pier.
+    // WebRTC setup messages, only between people who are on the pier. They are
+    // signed in the browser with a key from the pier link, which this server
+    // never sees, so tampering with them here would be detected and refused.
     if (msg.type === "signal" && person.status === "in") {
       const to = this.find(msg.to);
       if (to && this.info(to).status === "in") this.send(to, { type: "signal", from: person.id, data: msg.data });
@@ -226,7 +254,8 @@ export class Pier {
   }
 
   async end() {
-    await this.state.storage.delete("meta");
+    const tickets = await this.state.storage.list({ prefix: "g:" });
+    await this.state.storage.delete([...tickets.keys(), "meta"]);
     await this.state.storage.deleteAlarm();
     for (const ws of this.sockets()) {
       ws.serializeAttachment({ ...this.info(ws), status: "gone" });
@@ -234,4 +263,8 @@ export class Pier {
       try { ws.close(4010, "ended"); } catch {}
     }
   }
+}
+
+function newId() {
+  return crypto.randomUUID().slice(0, 8);
 }

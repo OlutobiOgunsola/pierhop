@@ -147,6 +147,7 @@ footer a:hover { color: var(--text); }
 .stack { display: grid; gap: 14px; margin-top: 28px; max-width: 760px; }
 .stack p { color: var(--text-2); margin: 0; }
 .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 40px; }
+.how + .how { margin-top: 36px; padding-top: 36px; border-top: 1px solid var(--line); }
 .how h3 { font-size: 17px; margin: 0 0 6px; }
 .how p { color: var(--text-2); margin: 0; font-size: 15.5px; }
 @media (max-width: 860px) { .how { grid-template-columns: 1fr; } }
@@ -183,6 +184,14 @@ footer a:hover { color: var(--text); }
         <div><h3>A tiny front desk</h3><p>A Cloudflare Worker with one Durable Object per pier keeps the guest list, passes join requests to the host and relays WebRTC connection setup.</p></div>
         <div><h3>Files go peer to peer</h3><p>Every browser on a pier connects directly to the others over WebRTC data channels. File bytes never touch the server.</p></div>
         <div><h3>Nothing is stored</h3><p>The server keeps no files and no accounts. It remembers only that a pier code was used, so an old link can never lead to someone else's pier.</p></div>
+      </div>
+      <div class="how">
+        <div><h3>The key lives in the link</h3><p>Each pier has a random 256-bit key in the URL fragment (after the #). Browsers never send the fragment to a server, so ours never sees it.</p></div>
+        <div><h3>Signed connection setup</h3><p>Each browser signs its DTLS fingerprint with an HMAC derived from the pier key. A server that swapped fingerprints to intercept the connection would fail the check, and the connection is refused.</p></div>
+        <div><h3>Encrypted twice</h3><p>On top of WebRTC's DTLS, every chunk is sealed with AES-256-GCM under a fresh key per transfer (HKDF from the pier key and a random salt), with the chunk's position as its nonce.</p></div>
+        <div><h3>Resumable without a server</h3><p>Downloads are written to the browser's origin private file system with a confirmed position every 2 MB, so a transfer carries on from there after a dropped connection or a refresh on either side.</p></div>
+        <div><h3>What the server sees</h3><p>The pier code, the names people type when they knock, device types, network addresses, and signed connection setup. Never files, file names or the key.</p></div>
+        <div><h3>What it doesn't protect against</h3><p>Anyone who has the full link and is let in sees what's shared on that pier. Keep the link to the people you mean to invite.</p></div>
       </div>
       <div class="install" style="margin-top:56px">
         <aside>
