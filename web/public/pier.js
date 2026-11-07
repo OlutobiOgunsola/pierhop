@@ -71,6 +71,11 @@ function deviceLabel() {
   return "";
 }
 
+// crypto.randomUUID only exists on HTTPS pages; this works everywhere.
+function randomId(n = 12) {
+  return [...crypto.getRandomValues(new Uint8Array(n))].map((b) => (b % 36).toString(36)).join("");
+}
+
 function newCode() {
   const letters = "abcdefghijkmnopqrstuvwxyz";
   const bytes = crypto.getRandomValues(new Uint8Array(10));
@@ -304,7 +309,7 @@ function sendFileList(peer) {
 }
 
 function shareFiles(files) {
-  for (const f of files) myFiles.set(crypto.randomUUID().slice(0, 12), f);
+  for (const f of files) myFiles.set(randomId(), f);
   for (const p of peers.values()) sendFileList(p);
   if (files.length) toast(files.length === 1 ? `Sharing ${files[0].name}` : `Sharing ${files.length} files`);
   render();
