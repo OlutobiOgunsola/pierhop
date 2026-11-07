@@ -1,6 +1,8 @@
 {
   "name": "pierhop",
   "main": "src/worker.js",
+  "workers_dev": true, // https://pierhop.<account>.workers.dev
+  "preview_urls": false,
   "compatibility_date": "2025-09-01",
   // The website and the pier app. Anything not found here goes to the Worker.
   "assets": { "directory": "./public", "binding": "ASSETS" },
